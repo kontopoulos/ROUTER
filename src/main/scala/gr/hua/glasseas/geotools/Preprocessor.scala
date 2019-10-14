@@ -1,6 +1,7 @@
 package gr.hua.glasseas.geotools
 
 import java.io.FileWriter
+import java.util.UUID
 
 import gr.hua.glasseas.ml.clustering.DBScan
 import gr.hua.glasseas.{AISPosition, GlasseasContext, Global}
@@ -27,13 +28,14 @@ class Preprocessor extends Serializable {
         positions.groupBy(_._1).foreach{
           case (id,vesselPositions) =>
             var previousPort = -1
+            var voyageId = UUID.randomUUID().toString
             var voyage: ArrayBuffer[AISPosition] = ArrayBuffer()
             vesselPositions.sortBy(_._2.timestamp).foreach{ // loop through every position to segment the trajectory into voyages
               case (mmsi,pos) =>
                 Global._ports.find(x => x._1.isInside(GeoPoint(pos.longitude,pos.latitude))) match {
                   case Some(port) =>
                     if (previousPort != port._2) { // different port id which means that the voyage ended
-                      val voyageId = s"($previousPort)-to-(${port._2})"
+                      val from_to = s"($previousPort)-to-(${port._2})_${voyageId}"
                       voyages.get(voyageId) match {
                         case Some(v) =>
                           val newVoyageList = v ++ voyage
@@ -46,6 +48,7 @@ class Preprocessor extends Serializable {
                       }
                       voyage = ArrayBuffer() // begin new voyage
                       previousPort = port._2 // store the starting port of the new voyage
+                      voyageId = UUID.randomUUID().toString // new distinct voyage identifier
                     }
                     else voyage.append(pos)
                   case None =>

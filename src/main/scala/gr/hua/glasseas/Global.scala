@@ -14,7 +14,7 @@ object Global {
     //updateGrid(new Grid(-8.0,29.0,38.2,47.2,0.01,0.01))
     println("Reading ports...")
     updatePorts("ports/reduced_ports.csv")
-    updateWaypoints("ports/waypoints.csv")
+    //updateWaypoints("ports/waypoints.csv")
   }
 
   def updateGrid(grid: Grid): Unit = {

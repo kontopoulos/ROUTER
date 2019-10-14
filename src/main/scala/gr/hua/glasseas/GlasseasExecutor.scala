@@ -118,8 +118,8 @@ object GlasseasExecutor {
 
     Global.initialize()
     val pr = new Preprocessor
-    val routes = pr.extractRoutes("humanitarian_hd_201508.csv","Cargo",sc,8,true)
-    pr.getVoyageClusters(routes,8,true)
+    val routes = pr.extractRoutes("humanitarian_hd_201508.csv","Container",sc,4,true)
+    //pr.getVoyageClusters(routes,8,true)
 
     //PKDDExperiment
 
