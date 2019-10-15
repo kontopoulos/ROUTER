@@ -4,7 +4,7 @@ import java.io.FileWriter
 import java.util.UUID
 
 import gr.hua.glasseas.ml.clustering.DBScan
-import gr.hua.glasseas.{AISPosition, GlasseasContext, Global}
+import gr.hua.glasseas.{AISPosition, BalancedPartitioner, GlasseasContext, Global, Voyage}
 import org.apache.spark.{HashPartitioner, SparkContext}
 import org.apache.spark.rdd.RDD
 
@@ -16,14 +16,15 @@ case class ClusterStatistics(startLon: Double, startLat: Double, endLon: Double,
 
 class Preprocessor extends Serializable {
 
-  def extractRoutes(filename: String, shipType: String, sc: SparkContext, numPartitions: Int, saveToFile: Boolean): RDD[(String,ArrayBuffer[AISPosition])] = {
+  def extractRoutes(filename: String, shipType: String, sc: SparkContext, numPartitions: Int, saveToFile: Boolean): RDD[Voyage] = {
     val gc = new GlasseasContext
     //val data = sc.parallelize(gc.readStream(filename).filter(x => x.shipType.contains("Container")).toSeq)
     val data = gc.readData(filename,sc).filter(_.shipType.contains(shipType))
     println("Dataset converted to RDD...")
-    val vesselVoyages = data.keyBy(_.mmsi).partitionBy(new HashPartitioner(numPartitions)).glom().flatMap{
+    val vesselVoyages = data.keyBy(_.mmsi).partitionBy(new BalancedPartitioner(numPartitions,data.map(_.mmsi))).glom().flatMap{
       positions =>
-        var voyages: Map[String,ArrayBuffer[AISPosition]] = Map()
+//        var voyages: Map[String,Voyage] = Map()
+        val voyages: ArrayBuffer[Voyage] = ArrayBuffer()
         //var tripsPerVoyage: Map[String,Int] = Map()
         positions.groupBy(_._1).foreach{
           case (id,vesselPositions) =>
@@ -35,17 +36,16 @@ class Preprocessor extends Serializable {
                 Global._ports.find(x => x._1.isInside(GeoPoint(pos.longitude,pos.latitude))) match {
                   case Some(port) =>
                     if (previousPort != port._2) { // different port id which means that the voyage ended
-                      val from_to = s"($previousPort)-to-(${port._2})_${voyageId}"
-                      voyages.get(voyageId) match {
-                        case Some(v) =>
-                          val newVoyageList = v ++ voyage
-                          voyages += (voyageId -> newVoyageList)
-                          /*val numVoyages = tripsPerVoyage(voyageId) + 1
-                          tripsPerVoyage += (voyageId -> numVoyages)*/
-                        case None =>
-                          voyages += (voyageId -> voyage)
-                          //tripsPerVoyage += (voyageId -> 1)
-                      }
+                      val itinerary = s"${previousPort}_to_${port._2}"
+                      val completedVoyage = Voyage(voyageId,itinerary,voyage)
+                      voyages.append(completedVoyage)
+//                      voyages.get(voyageId) match {
+//                        case Some(v) =>
+//                          val newVoyageList = v ++ voyage
+//                          voyages += (voyageId -> newVoyageList)
+//                        case None =>
+//                          voyages += (voyageId -> voyage)
+//                      }
                       voyage = ArrayBuffer() // begin new voyage
                       previousPort = port._2 // store the starting port of the new voyage
                       voyageId = UUID.randomUUID().toString // new distinct voyage identifier
@@ -64,10 +64,11 @@ class Preprocessor extends Serializable {
     if (saveToFile) {
       println("Saving results to file...")
       val w = new FileWriter(filename.replace(".csv","") + "_" + shipType +"_voyages.csv")
-      w.write("VOYAGE_ID,MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION\n")
-      vesselVoyages.collect.foreach {
-        case (voyageId, positions) =>
-          positions.foreach(p => w.write(s"$voyageId,${p.toString}\n"))
+      w.write("VOYAGE_ID,ITINERARY,MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION\n")
+      vesselVoyages.collect().foreach {
+        voyage =>
+          w.write(s"$voyage\n")
+//          positions.foreach(p => w.write(s"$voyageId,${p.toString}\n"))
       }
       w.close()
       println("Save complete.")

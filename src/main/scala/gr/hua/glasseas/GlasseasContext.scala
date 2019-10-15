@@ -17,7 +17,7 @@ class GlasseasContext extends Serializable {
     data.filter(row => row != header).map(mapToPosition(_))
   }
 
-  def readVoyageData(filename: String, sc: SparkContext): RDD[(String,ArrayBuffer[AISPosition])] = {
+  def readVoyageData(filename: String, sc: SparkContext): RDD[(String,ArrayBuffer[(String,AISPosition)])] = {
     val data = sc.textFile(filename)
     val header = data.first()
     data.filter(row => row != header).map{
@@ -25,21 +25,22 @@ class GlasseasContext extends Serializable {
         val parts = row.split(",")
 
         val voyageId = parts.head
-        val mmsi = parts(1).toInt
-        val imo = if (parts(2) == "NULL") -1 else parts(2).toInt
-        val lat = parts(3).toDouble
-        val lon = parts(4).toDouble
-        val cog = parts(5).toDouble
-        val heading = if (parts(6) == "NULL") 0.0 else parts(6).toDouble
-        val speed = parts(7).toDouble/10.0
-        val seconds = convertTimestampToSeconds(parts(8))
-        val timestamp = parts(8)
-        val shipName = parts(9)
-        val typeName = parts(10)
-        val destination = parts(11)
+        val itinerary = parts(1)
+        val mmsi = parts(2).toInt
+        val imo = if (parts(3) == "NULL") -1 else parts(3).toInt
+        val lat = parts(4).toDouble
+        val lon = parts(5).toDouble
+        val cog = parts(6).toDouble
+        val heading = if (parts(7) == "NULL") 0.0 else parts(7).toDouble
+        val speed = parts(8).toDouble/10.0
+        val seconds = convertTimestampToSeconds(parts(9))
+        val timestamp = parts(9)
+        val shipName = parts(10)
+        val typeName = parts(11)
+        val destination = parts(12)
 
-        (voyageId,AISPosition(mmsi,imo,lat,lon,cog,heading,speed,seconds,timestamp,shipName,typeName,destination))
-    }.groupBy(_._1).map(x => (x._1,x._2.map(_._2).to[ArrayBuffer]))
+        (voyageId,itinerary,AISPosition(mmsi,imo,lat,lon,cog,heading,speed,seconds,timestamp,shipName,typeName,destination))
+    }.groupBy(_._2).map(x => (x._1,x._2.map(y => (y._1,y._3).to[ArrayBuffer])))
   }
 
   private def mapToPosition(record: String): AISPosition = {
