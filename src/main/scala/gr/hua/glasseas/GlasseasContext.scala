@@ -17,7 +17,7 @@ class GlasseasContext extends Serializable {
     data.filter(row => row != header).map(mapToPosition(_))
   }
 
-  def readVoyageData(filename: String, sc: SparkContext): RDD[(String,ArrayBuffer[(String,AISPosition)])] = {
+  def readVoyageData(filename: String, sc: SparkContext): RDD[(String,ArrayBuffer[AISPosition])] = {
     val data = sc.textFile(filename)
     val header = data.first()
     data.filter(row => row != header).map{
@@ -28,19 +28,22 @@ class GlasseasContext extends Serializable {
         val itinerary = parts(1)
         val mmsi = parts(2).toInt
         val imo = if (parts(3) == "NULL") -1 else parts(3).toInt
-        val lat = parts(4).toDouble
-        val lon = parts(5).toDouble
-        val cog = parts(6).toDouble
-        val heading = if (parts(7) == "NULL") 0.0 else parts(7).toDouble
-        val speed = parts(8).toDouble/10.0
+        val lat = BigDecimal(parts(4).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
+        val lon = BigDecimal(parts(5).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
+        val cog = BigDecimal(parts(6).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
+        val heading = if (parts(7) == "NULL") 0.0 else BigDecimal(parts(7).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
+        val speed = BigDecimal(parts(8).toDouble/10.0).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
         val seconds = convertTimestampToSeconds(parts(9))
         val timestamp = parts(9)
         val shipName = parts(10)
         val typeName = parts(11)
         val destination = parts(12)
 
-        (voyageId,itinerary,AISPosition(mmsi,imo,lat,lon,cog,heading,speed,seconds,timestamp,shipName,typeName,destination))
-    }.groupBy(_._2).map(x => (x._1,x._2.map(y => (y._1,y._3).to[ArrayBuffer])))
+        (itinerary,AISPosition(mmsi,imo,lat,lon,cog,heading,speed,seconds,timestamp,shipName,typeName,destination,voyageId))
+    }.groupBy(_._1).map{
+      case (itinerary,arr) =>
+        (itinerary,arr.map(_._2).to[ArrayBuffer])
+    }
   }
 
   private def mapToPosition(record: String): AISPosition = {
@@ -58,8 +61,9 @@ class GlasseasContext extends Serializable {
     val shipName = recordParts(8)
     val typeName = recordParts(9)
     val destination = recordParts(10)
+    val annotation = if (recordParts.length == 12) recordParts(11) else "NULL"
 
-    AISPosition(mmsi,imo,lat,lon,cog,heading,speed,seconds,timestamp,shipName,typeName,destination)
+    AISPosition(mmsi,imo,lat,lon,cog,heading,speed,seconds,timestamp,shipName,typeName,destination,annotation)
   }
 
   /**
