@@ -94,9 +94,9 @@ class Preprocessor extends Serializable {
         arr.map(_._2).toMap.map(x => (x._1,x._2.filter(p => !Global._ports.exists(x => x._1.isInside(GeoPoint(p.longitude,p.latitude))))))
           .filterNot(x => x._2.isEmpty).map {
           case (itinerary,positions) =>
-            val dbscan = new DBScan(positions, 0.03, 10)
+            val dbscan = new DBScan(positions, 0.03, 5)
             val clusters = dbscan.getTrajectoryClusters
-              .filterNot(cl => cl.map(_.annotation).distinct.size > 1) // remove clusters that contain one voyage
+              .filter(cl => cl.map(_.annotation).distinct.size > 1) // remove clusters that contain one voyage
             val convexHulls = clusters.filter(_.size > 10).map{ // keep clusters that contain more than ten positions
               cluster =>
                 (getClusterStats(cluster),st.getConvexHull(cluster.map(p => GeoPoint(p.longitude,p.latitude)).toList))
@@ -117,20 +117,20 @@ class Preprocessor extends Serializable {
       w.close()
       println("Save complete.")
 
-      /*println("Saving results to file...")
-      val w = new FileWriter("voyage_clusters_new.csv")
-      w.write("VOYAGE_ID,CLUSTER_ID,MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION\n")
-      voyageConvexHulls.collect.foreach {
-        case (voyageId, clusters) =>
-          val test = clusters.zipWithIndex
-
-          test.foreach{
-            case (positions,clusterId) =>
-              positions.foreach(p => w.write(s"$voyageId,$clusterId,${p.toString}\n"))
-          }
-      }
-      w.close()
-      println("Save complete.")*/
+//      println("Saving results to file...")
+//      val w = new FileWriter("voyage_clusters_new.csv")
+//      w.write("ITINERARY,CLUSTER_ID,MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
+//      voyageConvexHulls.collect.foreach {
+//        case (voyageId, clusters) =>
+//          val test = clusters.zipWithIndex
+//
+//          test.foreach{
+//            case (positions,clusterId) =>
+//              positions.foreach(p => w.write(s"$voyageId,$clusterId,${p.toString}\n"))
+//          }
+//      }
+//      w.close()
+//      println("Save complete.")
     }
     //voyageHulls
   }
