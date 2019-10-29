@@ -151,7 +151,7 @@ class SpatialToolkit extends Serializable {
     val concaveHull: ArrayBuffer[GeoPoint] = ArrayBuffer()
 
     // optional remove duplicates
-    val distinctGeoPoints = geoPoints.toSet.to[ArrayBuffer]
+    val distinctGeoPoints = geoPoints.distinct.to[ArrayBuffer]
 
     // k has to be greater than 3 to execute the algorithm
     var kk = Math.max(k, 3)
@@ -248,14 +248,8 @@ class SpatialToolkit extends Serializable {
         nearestList.append((getHarvesineDistance(q,o),o))
     }
 
-    val sortedNearestList = nearestList.sortBy(_._1)
-
-    val result: ArrayBuffer[GeoPoint] = ArrayBuffer()
-    for (i <- 0 until Math.min(k,sortedNearestList.size)) {
-      result.append(sortedNearestList.apply(i)._2)
-    }
-
-    result
+    val sortedNearestList = nearestList.sortBy(_._1).map(_._2)
+    sortedNearestList
   }
 
   private def findMinYPoint(l: ArrayBuffer[GeoPoint]): GeoPoint = {
@@ -299,7 +293,7 @@ class SpatialToolkit extends Serializable {
     // calculate part equations for line-line intersection
     val a1 = l1p2.latitude - l1p1.latitude
     val b1 = l1p1.longitude - l1p2.longitude
-    val c1 = a1 * l1p1.longitude + b1 * l1p1.longitude
+    val c1 = a1 * l1p1.longitude + b1 * l1p1.latitude
     val a2 = l2p2.latitude - l2p1.latitude
     val b2 = l2p1.longitude - l2p2.longitude
     val c2 = a2 * l2p1.longitude + b2 * l2p1.latitude
@@ -310,7 +304,8 @@ class SpatialToolkit extends Serializable {
     val pX = (c1 * b2 - c2 * b1) / tmp
 
     // check if intersection x coordinate lies in line line segment
-    if ((pX > l1p1.longitude && pX > l1p2.longitude) || (pX > l2p1.longitude && pX > l2p2.longitude) || (pX < l1p1.longitude && pX < l1p2.longitude) || (pX < l2p1.longitude && pX < l2p2.longitude)) {
+    if ((pX > l1p1.longitude && pX > l1p2.longitude) || (pX > l2p1.longitude && pX > l2p2.longitude)
+      || (pX < l1p1.longitude && pX < l1p2.longitude) || (pX < l2p1.longitude && pX < l2p2.longitude)) {
       return false
     }
 
@@ -318,7 +313,8 @@ class SpatialToolkit extends Serializable {
     val pY = (a1 * c2 - a2 * c1) / tmp
 
     // check if intersection y coordinate lies in line line segment
-    if ((pY > l1p1.latitude && pY > l1p2.latitude) || (pY > l2p1.latitude && pY > l2p2.latitude) || (pY < l1p1.latitude && pY < l1p2.latitude) || (pY < l2p1.latitude && pY < l2p2.latitude)) {
+    if ((pY > l1p1.latitude && pY > l1p2.latitude) || (pY > l2p1.latitude && pY > l2p2.latitude)
+      || (pY < l1p1.latitude && pY < l1p2.latitude) || (pY < l2p1.latitude && pY < l2p2.latitude)) {
       return false
     }
     true

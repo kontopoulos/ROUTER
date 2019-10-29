@@ -13,4 +13,9 @@ case class GeoPoint(longitude: Double, latitude: Double) {
     else false
   }
 
+  override def hashCode(): Int = {
+    val tmp = (latitude + ((longitude + 1) / 2)).toInt
+    Math.abs((longitude + (tmp * tmp)).toInt)
+  }
+
 }
