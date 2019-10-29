@@ -5,7 +5,7 @@ import gr.hua.glasseas.geotools.{Grid, Polygon}
 object Global {
 
   // an example of a grid
-  var _grid = new Grid(-8.0,29.0,38.2,47.2,0.1,0.1)
+  var _grid = new Grid(-8.0,29.0,38.2,47.2,0.2,0.2)
   var _ports: Set[(Polygon,Int)] = Set()
   var _waypoints: Set[(Polygon,Int)] = Set()
 

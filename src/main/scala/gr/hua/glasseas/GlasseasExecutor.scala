@@ -113,14 +113,58 @@ object GlasseasExecutor {
       df.format(millis)
     }*/
 
-    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
-    val sc = new SparkContext(conf)
+//    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
+//    val sc = new SparkContext(conf)
 
     Global.initialize()
-    val pr = new Preprocessor
+    //Global._grid.save("grid.csv")
+
+
+    var numCells: Map[Int,Set[String]] = Map()
+    var its: Map[String,Set[String]] = Map()
+//    val w = new FileWriter("lala.csv")
+    scala.io.Source.fromFile("one.csv").getLines().drop(1).filter{
+      line =>
+        val parts = line.split(",")
+        val itinerary = parts(1)
+        itinerary == "40_to_379" || itinerary == "40_to_420" || itinerary == "6_to_186"
+    }.foreach{
+      line =>
+        val parts = line.split(",")
+        val id = parts.head
+        val itinerary = parts(1)
+        val lon = parts(5).toDouble
+        val lat = parts(4).toDouble
+        val cell = Global._grid.getEnclosingCell(GeoPoint(lon,lat))
+        its.get(id) match {
+          case Some(it) =>
+            val nit = it + itinerary
+            its += (id -> nit)
+          case None => its += (id -> Set(itinerary))
+        }
+        numCells.get(cell.id) match {
+          case Some(s) =>
+            val ns = s + id
+            numCells += (cell.id -> ns)
+          case None => numCells += (cell.id -> Set(id))
+        }
+        //w.write(line + "," + cell.id + "\n")
+    }
+    val t = numCells.filter(_._2.size > 1)
+    val w = new FileWriter("routes.csv")
+    w.write("LONGITUDE,LATITUDE,ID,ITINERARY\n")
+    Global._grid.cells.filter(x => t.contains(x._2.id)).foreach{
+      case (gp,c) =>
+        t(c.id).foreach{
+          x =>
+            its(x).foreach(y => w.write(s"$gp,${x},${y}\n"))
+        }
+    }
+    w.close()
+//    val pr = new Preprocessor
 //    val routes = pr.extractRoutes("dataset.csv","Cargo",sc,4,true)
 
-    pr.getVoyageClustersFromFile("one.csv",sc,4,true)
+//    pr.getVoyageClustersFromFile("one.csv",sc,4,true)
 
 
     //PKDDExperiment

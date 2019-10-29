@@ -2,7 +2,7 @@ package gr.hua.glasseas.geotools
 
 case class GeoPoint(longitude: Double, latitude: Double) {
 
-  override def toString: String = s"$longitude $latitude"
+  override def toString: String = s"$longitude,$latitude"
 
   override def equals(obj: Any): Boolean = {
     if (obj.isInstanceOf[GeoPoint]) {

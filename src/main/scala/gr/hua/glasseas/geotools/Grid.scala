@@ -42,8 +42,8 @@ class Grid(val minLon: Double, val minLat: Double, val maxLon: Double, val maxLa
 
   def save(filename: String): Unit = {
     val writer = new FileWriter(filename)
-    writer.write("ID LONGITUDE LATITUDE\n")
-    cells.map(_._2).foreach(cell => writer.write(s"${cell.id} ${cell.geoPoint.longitude} ${cell.geoPoint.latitude}\n"))
+    writer.write("ID,LONGITUDE,LATITUDE\n")
+    cells.map(_._2).foreach(cell => writer.write(s"${cell.id},${cell.geoPoint.longitude},${cell.geoPoint.latitude}\n"))
     writer.close
   }
 
