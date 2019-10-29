@@ -73,15 +73,16 @@ class Preprocessor extends Serializable {
     }.filter(v => !v.itinerary.contains("-1"))
 
     if (saveToFile) {
-      println("Saving results to file...")
+      vesselVoyages.saveAsTextFile(s"$shipType-trips")
+      /*println("Saving results to file...")
       val w = new FileWriter(filename.replace(".csv","") + "_" + shipType +"_voyages.csv")
-      w.write("VOYAGE_ID,ITINERARY,MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION\n")
+      w.write("VOYAGE_ID,ITINERARY,MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
       vesselVoyages.collect().foreach {
         voyage =>
           w.write(s"$voyage\n")
       }
       w.close()
-      println("Save complete.")
+      println("Save complete.")*/
     }
     vesselVoyages
   }
