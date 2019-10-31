@@ -33,7 +33,7 @@ class Preprocessor extends Serializable {
             var previousPosition = positions.head._2
             positions.foreach{ // loop through every position to segment the trajectory into voyages
               case (mmsi,pos) =>
-                Global._ports.find(x => x._1.isInside(GeoPoint(pos.longitude,pos.latitude))) match {
+                Global.getEnclosingPort(GeoPoint(pos.longitude,pos.latitude)) match {
                   case Some(port) =>
                     if (previousPort != port._2) { // different port id which means that the voyage ended
                       val itinerary = s"${previousPort}_to_${port._2}"

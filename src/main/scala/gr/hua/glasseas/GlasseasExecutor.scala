@@ -113,17 +113,17 @@ object GlasseasExecutor {
       df.format(millis)
     }*/
 
-//    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
-//    val sc = new SparkContext(conf)
+    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
+    val sc = new SparkContext(conf)
 
     Global.initialize()
     //Global._grid.save("grid.csv")
 
 
-    var numCells: Map[Int,Set[String]] = Map()
+    /*var numCells: Map[Int,Set[String]] = Map()
     var its: Map[String,Set[String]] = Map()
-//    val w = new FileWriter("lala.csv")
-    scala.io.Source.fromFile("one.csv").getLines().drop(1).filter{
+    val w = new FileWriter("laslas.csv")
+    scala.io.Source.fromFile("med_trips/trips.csv").getLines().drop(1).filter{
       line =>
         val parts = line.split(",")
         val itinerary = parts(1)
@@ -148,9 +148,9 @@ object GlasseasExecutor {
             numCells += (cell.id -> ns)
           case None => numCells += (cell.id -> Set(id))
         }
-        //w.write(line + "," + cell.id + "\n")
+        w.write(line + "," + cell.id + "\n")
     }
-    val t = numCells.filter(_._2.size > 1)
+    /*val t = numCells.filter(_._2.size > 1)
     val w = new FileWriter("routes.csv")
     w.write("LONGITUDE,LATITUDE,ID,ITINERARY\n")
     Global._grid.cells.filter(x => t.contains(x._2.id)).foreach{
@@ -159,10 +159,10 @@ object GlasseasExecutor {
           x =>
             its(x).foreach(y => w.write(s"$gp,${x},${y}\n"))
         }
-    }
-    w.close()
-//    val pr = new Preprocessor
-//    val routes = pr.extractRoutes("dataset.csv","Cargo",sc,4,true)
+    }*/
+    w.close()*/
+    val pr = new Preprocessor
+    val routes = pr.extractRoutes("humanitarian_hd_201508.csv","Cargo",sc,4,true)
 
 //    pr.getVoyageClustersFromFile("one.csv",sc,4,true)
 
