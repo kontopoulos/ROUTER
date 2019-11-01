@@ -8,11 +8,11 @@ class Polygon(val points: List[GeoPoint]) extends Serializable {
     this(List[GeoPoint]())
   }
 
-  override def toString: String = s""""POLYGON ((${points.mkString(", ")}))""""
+  override def toString: String = s""""POLYGON ((${points.map(gp => s"${gp.longitude} ${gp.latitude}").mkString(", ")}))""""
 
   def save(filename: String): Unit = {
     val writer = new FileWriter(filename)
-    writer.write(s""""POLYGON ((${points.mkString(", ")}))"""")
+    writer.write(this.toString)
     writer.close
   }
 

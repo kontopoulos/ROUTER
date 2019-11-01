@@ -113,6 +113,7 @@ object GlasseasExecutor {
       df.format(millis)
     }*/
 
+    System.setProperty("hadoop.home.dir","C:\\hadoop" )
     val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
     val sc = new SparkContext(conf)
 
@@ -162,7 +163,7 @@ object GlasseasExecutor {
     }*/
     w.close()*/
     val pr = new Preprocessor
-    val routes = pr.extractRoutes("humanitarian_hd_201508.csv","Cargo",sc,4,true)
+    val routes = pr.extractRoutes("dataset.csv","Cargo",sc,8,true)
 
 //    pr.getVoyageClustersFromFile("one.csv",sc,4,true)
 

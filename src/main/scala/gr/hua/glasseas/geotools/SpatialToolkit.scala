@@ -118,7 +118,7 @@ class SpatialToolkit extends Serializable {
     val lower = halfHull(sortedPoints.reverse)
     upper.remove(0)
     lower.remove(0)
-    val polygonPoints = (upper ++: lower).toList
+    val polygonPoints = (upper.toList ++ lower.toList)
     new Polygon(polygonPoints ++ List(polygonPoints.head))
   }
 

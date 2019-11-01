@@ -14,7 +14,7 @@ object Global {
     println("Initializing grid...")
     //updateGrid(new Grid(-8.0,29.0,38.2,47.2,0.01,0.01))
     println("Reading ports...")
-    updatePorts("ports/ports.csv")
+    //updatePorts("ports/ports.csv")
     //updateWaypoints("ports/waypoints.csv")
   }
 
