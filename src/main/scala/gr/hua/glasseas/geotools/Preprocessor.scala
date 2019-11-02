@@ -4,8 +4,8 @@ import java.io.FileWriter
 import java.util.UUID
 
 import gr.hua.glasseas.ml.clustering.DBScan
-import gr.hua.glasseas.{AISPosition, BalancedPartitioner, GlasseasContext, Global, Voyage}
-import org.apache.spark.{HashPartitioner, SparkContext}
+import gr.hua.glasseas.{AISPosition, BalancedPartitioner, GlasseasContext, LocalDatabase, Voyage}
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ArrayBuffer
@@ -33,7 +33,7 @@ class Preprocessor extends Serializable {
             var previousPosition = positions.head._2
             positions.foreach{ // loop through every position to segment the trajectory into voyages
               case (mmsi,pos) =>
-                Global.getEnclosingPort(GeoPoint(pos.longitude,pos.latitude)) match {
+                LocalDatabase.getEnclosingWaypoint(GeoPoint(pos.longitude,pos.latitude)) match {
                   case Some(port) =>
                     if (previousPort != port._2) { // different port id which means that the voyage ended
                       val itinerary = s"${previousPort}_to_${port._2}"
@@ -92,8 +92,17 @@ class Preprocessor extends Serializable {
     val st = new SpatialToolkit
     val voyageConvexHulls = itineraries.keyBy(_._1).partitionBy(new BalancedPartitioner(numPartitions,itineraries.map(_._1))).glom().flatMap {
       arr =>
-        arr.map(_._2).toMap.map(x => (x._1,x._2.filter(p => !Global._ports.exists(x => x._1.isInside(GeoPoint(p.longitude,p.latitude))))))
-          .filterNot(x => x._2.isEmpty).map {
+        arr.map(_._2).toMap.map{
+          x =>
+            val filtered = x._2.filter{
+              p =>
+                LocalDatabase.getEnclosingWaypoint(GeoPoint(p.longitude,p.latitude)) match {
+                  case Some(wp) => false
+                  case None => true
+                }
+            }
+            (x._1,filtered)
+        }.filterNot(x => x._2.isEmpty).map {
           case (itinerary,positions) =>
             val dbscan = new DBScan(positions, 0.03, 5)
             val clusters = dbscan.getTrajectoryClusters

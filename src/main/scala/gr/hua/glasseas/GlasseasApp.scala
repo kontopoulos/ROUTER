@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-object GlasseasExecutor {
+object GlasseasApp {
 
   def main(args: Array[String]): Unit = {
 
@@ -117,7 +117,7 @@ object GlasseasExecutor {
     val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
     val sc = new SparkContext(conf)
 
-    Global.initialize()
+    LocalDatabase.initializeDefaults()
     //Global._grid.save("grid.csv")
 
 

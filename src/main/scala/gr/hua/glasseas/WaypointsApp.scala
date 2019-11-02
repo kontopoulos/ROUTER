@@ -11,9 +11,9 @@ object WaypointsApp {
 
   def main(args: Array[String]): Unit = {
 
-    Global.initialize()
-    Global.updateGrid(new Grid(-8.0,29.0,38.2,47.2,0.01,0.01))
-    Global._grid.save("for_ports_grid.csv")
+    LocalDatabase.initializeDefaults()
+    LocalDatabase.updateGrid(new Grid(-8.0,29.0,38.2,47.2,0.01,0.01))
+    LocalDatabase.grid.save("for_ports_grid.csv")
 
     var positionsPerCell: Map[Cell,Set[Int]] = Map()
 
@@ -23,7 +23,7 @@ object WaypointsApp {
     val inputValues = gc.readStream("dataset.csv").filter{
       p =>
         if (p.speed == 0.0) {
-          val cell = Global._grid.getEnclosingCell(GeoPoint(p.longitude, p.latitude))
+          val cell = LocalDatabase.grid.getEnclosingCell(GeoPoint(p.longitude, p.latitude))
           positionsPerCell.get(cell) match {
             case Some(set) =>
               if (!set.contains(p.id)) {
