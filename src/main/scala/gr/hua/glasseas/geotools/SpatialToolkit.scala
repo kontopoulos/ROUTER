@@ -1,7 +1,5 @@
 package gr.hua.glasseas.geotools
 
-import gr.hua.glasseas.AISPosition
-
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 class SpatialToolkit extends Serializable {

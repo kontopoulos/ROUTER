@@ -4,7 +4,7 @@ import java.io.FileWriter
 import java.util.UUID
 
 import gr.hua.glasseas.ml.clustering.DBScan
-import gr.hua.glasseas.{AISPosition, BalancedPartitioner, GlasseasContext, LocalDatabase, Voyage}
+import gr.hua.glasseas.{BalancedPartitioner, GlasseasContext, LocalDatabase}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
@@ -15,77 +15,6 @@ case class ClusterStatistics(startLon: Double, startLat: Double, endLon: Double,
 }
 
 class Preprocessor extends Serializable {
-
-  def extractRoutes(filename: String, shipType: String, sc: SparkContext, numPartitions: Int, saveToFile: Boolean): RDD[Voyage] = {
-    val gc = new GlasseasContext
-    //val data = sc.parallelize(gc.readStream(filename).filter(x => x.shipType.contains("Container")).toSeq)
-    val data = gc.readData(filename,sc).filter(_.shipType.contains(shipType))
-    println("Dataset converted to RDD...")
-    val vesselVoyages = data.keyBy(_.id).partitionBy(new BalancedPartitioner(numPartitions,data.map(_.id))).glom().flatMap{
-      positions =>
-        val voyages: ArrayBuffer[Voyage] = ArrayBuffer()
-        positions.groupBy(_._1).foreach{
-          case (id,vesselPositions) =>
-            var previousPort = -1
-            var voyageId = UUID.randomUUID().toString
-            var voyage: ArrayBuffer[AISPosition] = ArrayBuffer()
-            val positions = vesselPositions.sortBy(_._2.timestamp)
-            var previousPosition = positions.head._2
-            positions.foreach{ // loop through every position to segment the trajectory into voyages
-              case (mmsi,pos) =>
-                LocalDatabase.getEnclosingWaypoint(GeoPoint(pos.longitude,pos.latitude)) match {
-                  case Some(port) =>
-                    if (previousPort != port._2) { // different port id which means that the voyage ended
-                      val itinerary = s"${previousPort}_to_${port._2}"
-                      voyage.append(pos)
-                      val completedVoyage = Voyage(voyageId,itinerary,voyage)
-                      voyages.append(completedVoyage)
-                      voyage = ArrayBuffer() // begin new voyage
-                      previousPort = port._2 // store the starting port of the new voyage
-                      voyageId = UUID.randomUUID().toString // new distinct voyage identifier
-                    }
-                    else {
-                      if (pos.seconds - previousPosition.seconds >= 86400) { // equal to or more than a day
-                        val itinerary = s"${previousPort}_to_-1"
-                        val completedVoyage = Voyage(voyageId,itinerary,voyage)
-                        voyages.append(completedVoyage)
-                        voyage = ArrayBuffer() // begin new voyage
-                        previousPort = -1 // invalid previous port
-                        voyageId = UUID.randomUUID().toString // new distinct voyage identifier
-                      }
-                      voyage.append(pos)
-                    }
-                  case None =>
-                    if (pos.seconds - previousPosition.seconds >= 86400) { // equal to or more than a day
-                      val itinerary = s"${previousPort}_to_-1"
-                      val completedVoyage = Voyage(voyageId,itinerary,voyage)
-                      voyages.append(completedVoyage)
-                      voyage = ArrayBuffer() // begin new voyage
-                      previousPort = -1 // invalid previous port
-                      voyageId = UUID.randomUUID().toString // new distinct voyage identifier
-                    }
-                    voyage.append(pos) // no port is found, which means that the vessel is still travelling at the open sea and continues its voyage
-                }
-                previousPosition = pos
-            }
-        }
-        voyages
-    }.filter(v => !v.itinerary.contains("-1"))
-
-    if (saveToFile) {
-      vesselVoyages.saveAsTextFile(s"$shipType-trips")
-      /*println("Saving results to file...")
-      val w = new FileWriter(filename.replace(".csv","") + "_" + shipType +"_voyages.csv")
-      w.write("VOYAGE_ID,ITINERARY,MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
-      vesselVoyages.collect().foreach {
-        voyage =>
-          w.write(s"$voyage\n")
-      }
-      w.close()
-      println("Save complete.")*/
-    }
-    vesselVoyages
-  }
 
   def getVoyageClusters(itineraries: RDD[(String,ArrayBuffer[AISPosition])], numPartitions: Int, saveToFile: Boolean): Unit/*RDD[(String,ArrayBuffer[(ClusterStatistics,Polygon)])]*/ = {
 

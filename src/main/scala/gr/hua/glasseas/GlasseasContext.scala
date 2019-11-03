@@ -2,6 +2,7 @@ package gr.hua.glasseas
 
 import java.text.SimpleDateFormat
 
+import gr.hua.glasseas.geotools.AISPosition
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 

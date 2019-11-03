@@ -1,4 +1,4 @@
-package gr.hua.glasseas
+package gr.hua.glasseas.geotools
 
 import scala.collection.mutable.ArrayBuffer
 

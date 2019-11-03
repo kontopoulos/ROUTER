@@ -16,8 +16,7 @@ import de.lmu.ifi.dbs.elki.math.geodesy.WGS84SpheroidEarthModel
 import de.lmu.ifi.dbs.elki.persistent.MemoryPageFileFactory
 
 import scala.collection.JavaConverters._
-import gr.hua.glasseas.AISPosition
-import gr.hua.glasseas.geotools.{GeoPoint, SpatialToolkit}
+import gr.hua.glasseas.geotools.{AISPosition, GeoPoint, SpatialToolkit}
 
 import scala.collection.mutable.ArrayBuffer
 
