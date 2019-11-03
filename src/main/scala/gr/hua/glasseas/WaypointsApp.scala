@@ -13,7 +13,9 @@ object WaypointsApp {
 
     LocalDatabase.initializeDefaults()
     LocalDatabase.updateGrid(new Grid(-8.0,29.0,38.2,47.2,0.01,0.01))
-    LocalDatabase.grid.save("for_ports_grid.csv")
+//    LocalDatabase.grid.save("for_ports_grid.csv")
+
+    val shipType = "Cargo"
 
     var positionsPerCell: Map[Cell,Set[Int]] = Map()
 
@@ -22,7 +24,7 @@ object WaypointsApp {
 
     val inputValues = gc.readStream("dataset.csv").filter{
       p =>
-        if (p.speed == 0.0) {
+        if (p.speed == 0.0 && p.shipType.contains(shipType)) {
           val cell = LocalDatabase.grid.getEnclosingCell(GeoPoint(p.longitude, p.latitude))
           positionsPerCell.get(cell) match {
             case Some(set) =>
