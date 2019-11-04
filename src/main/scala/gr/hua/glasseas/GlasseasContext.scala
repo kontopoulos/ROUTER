@@ -18,7 +18,7 @@ class GlasseasContext extends Serializable {
     data.filter(row => row != header).map(mapToPosition(_))
   }
 
-  def readVoyageData(filename: String, sc: SparkContext): RDD[(String,ArrayBuffer[AISPosition])] = {
+  def readVoyageData(filename: String, sc: SparkContext): RDD[(String,AISPosition)] = {
     val data = sc.textFile(filename)
     val header = data.first()
     data.filter(row => row != header).map{
@@ -41,9 +41,6 @@ class GlasseasContext extends Serializable {
         val destination = parts(12)
 
         (itinerary,AISPosition(mmsi,imo,lat,lon,cog,heading,speed,seconds,timestamp,shipName,typeName,destination,voyageId))
-    }.groupBy(_._1).map{
-      case (itinerary,arr) =>
-        (itinerary,arr.map(_._2).to[ArrayBuffer])
     }
   }
 

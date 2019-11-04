@@ -74,11 +74,11 @@ class Preprocessor extends Serializable {
     //voyageHulls
   }
 
-  def getVoyageClustersFromFile(filename: String, sc: SparkContext, numPartitions: Int, saveToFile: Boolean): Unit/*RDD[(String,ArrayBuffer[(ClusterStatistics,Polygon)])]*/ = {
+  /*def getVoyageClustersFromFile(filename: String, sc: SparkContext, numPartitions: Int, saveToFile: Boolean): Unit/*RDD[(String,ArrayBuffer[(ClusterStatistics,Polygon)])]*/ = {
     val gc = new GlasseasContext
     val data = gc.readVoyageData(filename,sc)
     getVoyageClusters(data,numPartitions,saveToFile)
-  }
+  }*/
 
   private def getClusterStats(cluster: ArrayBuffer[AISPosition]): ClusterStatistics = {
         val numElements = cluster.size
