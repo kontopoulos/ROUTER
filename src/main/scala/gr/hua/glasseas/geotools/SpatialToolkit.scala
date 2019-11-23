@@ -23,6 +23,18 @@ class SpatialToolkit extends Serializable {
   }
 
   /**
+    * Returns the difference in headings between two AIS positions
+    * @param first AIS position
+    * @param second AIS position
+    * @return
+    */
+  def headingDifference(first: AISPosition, second: AISPosition): Double = {
+    val angleDiff = Math.abs(first.cog - second.cog)
+    if (angleDiff <= 180.0) angleDiff
+    else Math.abs(360.0 - Math.max(first.cog,second.cog) + Math.min(first.cog,second.cog))
+  }
+
+  /**
     * This uses the ‘haversine’ formula to calculate
     * the great-circle distance between two points – that is,
     * the shortest distance over the earth’s surface – giving an ‘as-the-crow-flies’ distance
@@ -32,7 +44,7 @@ class SpatialToolkit extends Serializable {
     * @param gp2 geo-point 2
     * @return distance in kilometers
     */
-  def getHarvesineDistance(gp1: GeoPoint, gp2: GeoPoint): Double = {
+  def getHaversineDistance(gp1: GeoPoint, gp2: GeoPoint): Double = {
     val lon1Rad = gp1.longitude*(Math.PI/180)
     val lat1Rad = gp1.latitude*(Math.PI/180)
     val lon2Rad = gp2.longitude*(Math.PI/180)
@@ -243,7 +255,7 @@ class SpatialToolkit extends Serializable {
     val nearestList: ArrayBuffer[(Double,GeoPoint)] = ArrayBuffer()
     l.foreach{
       o =>
-        nearestList.append((getHarvesineDistance(q,o),o))
+        nearestList.append((getHaversineDistance(q,o),o))
     }
 
     val sortedNearestList = nearestList.sortBy(_._1).map(_._2)

@@ -12,17 +12,21 @@ object WaypointsApp {
   def main(args: Array[String]): Unit = {
 
     LocalDatabase.initializeDefaults()
+//    LocalDatabase.gridFromFile("for_ports_grid.csv",-8.0,29.0,38.2,47.2,0.01,0.01)
     LocalDatabase.updateGrid(new Grid(-8.0,29.0,38.2,47.2,0.01,0.01))
 //    LocalDatabase.grid.save("for_ports_grid.csv")
 
+    println("Grid created.")
+
     val shipType = "Cargo"
+    val filename = "training.csv"
 
     var positionsPerCell: Map[Cell,Set[Int]] = Map()
 
     val gc = new GlasseasContext
     val st = new SpatialToolkit
 
-    val inputValues = gc.readStream("dataset.csv").filter{
+    val inputValues = gc.readStream(filename).filter{
       p =>
         if (p.speed == 0.0 && p.shipType.contains(shipType)) {
           val cell = LocalDatabase.grid.getEnclosingCell(GeoPoint(p.longitude, p.latitude))
@@ -42,14 +46,18 @@ object WaypointsApp {
         else false
     }.to[ArrayBuffer]
 
-    val inputValuesWriter = new FileWriter("input_values.csv")
+    println("Data compressed.")
+
+    /*val inputValuesWriter = new FileWriter("input_values.csv")
     inputValuesWriter.write(s"MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
     inputValues.foreach(p => inputValuesWriter.write(s"$p\n"))
-    inputValuesWriter.close()
+    inputValuesWriter.close()*/
 
-    val dbscan = new DBScan(inputValues,500.0,10)
+    val eps = 2000.0
+    val minPts = 10
+    val dbscan = new DBScan(inputValues,eps,minPts)
     val convexHulls = dbscan.getClusters.map(cluster => st.getConvexHull(cluster.map(p => GeoPoint(p.longitude,p.latitude)).toList)).zipWithIndex
-    val polygonWriter = new FileWriter("waypoints.csv")
+    val polygonWriter = new FileWriter(s"${filename}_${shipType}_waypoints_${eps}_${minPts}.csv")
     polygonWriter.write("ID,POLYGON\n")
     convexHulls.foreach(ch => polygonWriter.write(s"${ch._2},${ch._1}\n"))
     polygonWriter.close()

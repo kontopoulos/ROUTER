@@ -10,10 +10,8 @@ object ConvexHullsSparkApp {
 
   def main(args: Array[String]): Unit = {
 
-    val filename = "dataset_voyages.csv"
-    val numPartitions = 8
+    val filename = "training_voyages.csv"
 
-    System.setProperty("hadoop.home.dir","C:\\hadoop" )
     val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
     val sc = new SparkContext(conf)
 
@@ -28,26 +26,35 @@ object ConvexHullsSparkApp {
           val itinerary = groupId._1
           val cell = groupId._2
           val positions = records.map(_._3).to[ArrayBuffer]
-          val dbscan = new DBScan(positions, 0.03, 5)
+          val st = new SpatialToolkit
+
+          val headingDiffs = positions.sliding(2,1).map(list => st.headingDifference(list.head,list.last)).toList
+          val meanHeadingDiff = headingDiffs.sum/headingDiffs.size
+          val stdHeadingDiff = Math.sqrt(headingDiffs.map(d => Math.pow(Math.abs(d-meanHeadingDiff),2)).sum/headingDiffs.size)
+
+          val speedDiffs = positions.sliding(2,1).map(list => Math.abs(list.head.speed-list.last.speed)).toList
+          val meanSpeedDiff = speedDiffs.sum/speedDiffs.size
+          val stdSpeedDiff = Math.sqrt(speedDiffs.map(d => Math.pow(Math.abs(d-meanSpeedDiff),2)).sum/speedDiffs.size)
+
+          val distances = positions.map(p => GeoPoint(p.longitude,p.latitude)).sliding(2,1).map(list => st.getHaversineDistance(list.head,list.last)).toList
+          val meanDistance = distances.sum/distances.size
+          val stdDistance = Math.sqrt(distances.map(d => Math.pow(Math.abs(d-meanDistance),2)).sum/distances.size)
+
+          val dbscan = new DBScan(positions, 0.03,stdDistance,stdSpeedDiff,stdHeadingDiff, 6)
           val clusters = dbscan.getTrajectoryClusters
             .zipWithIndex
-            .map{
-              case (clusterPositions,clusterIndex) =>
-                Cluster(s"${clusterIndex}-${itinerary}@${cell.id}",clusterPositions)
-            }
+            .map{ case (clusterPositions,clusterIndex) => Cluster(s"${clusterIndex}-${itinerary}@${cell.id}",itinerary,clusterPositions) }
           clusters
     }
-    trajectoryClusters.saveAsTextFile(s"$filename-clusters")
 
-    /*val convexHulls = trajectoryClusters.groupBy(_._1)
+    val convexHulls = trajectoryClusters.filter(cl => cl.positions.nonEmpty && cl.positions.map(_.annotation).distinct.size > 1)
       .map{
-        case (group,positions) =>
+        cluster =>
           val st = new SpatialToolkit
-          val convexHull = st.getConvexHull(positions.map(kp => GeoPoint(kp._2.longitude,kp._2.latitude)).toList)
-          s"$group,$convexHull"
+          val convexHull = st.getConvexHull(cluster.positions.map(p => GeoPoint(p.longitude,p.latitude)).toList)
+          s"${cluster.clusterId},${cluster.itinerary},$convexHull"
       }
-    convexHulls.cache()
-    trajectoryClusters.saveAsTextFile(s"$filename-convexhulls")*/
+    convexHulls.saveAsTextFile(s"$filename-convexhulls")
 
   }
 

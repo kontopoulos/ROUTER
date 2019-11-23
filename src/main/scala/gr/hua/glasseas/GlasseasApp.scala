@@ -429,7 +429,7 @@ object GlasseasApp {
         val lat = parts(3).toDouble
         val speed = parts(4).toDouble
 
-        if (ports.exists(p => st.getHarvesineDistance(GeoPoint(lon, lat), GeoPoint(p._1, p._2)) <= 2.0) && speed <= 0.0) {
+        if (ports.exists(p => st.getHaversineDistance(GeoPoint(lon, lat), GeoPoint(p._1, p._2)) <= 2.0) && speed <= 0.0) {
           q += line
           if (q.size == 50000) {
             val value = q.mkString("\n")

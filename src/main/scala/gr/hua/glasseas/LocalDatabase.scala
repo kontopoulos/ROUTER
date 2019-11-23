@@ -1,6 +1,6 @@
 package gr.hua.glasseas
 
-import gr.hua.glasseas.geotools.{GeoPoint, Grid, Polygon}
+import gr.hua.glasseas.geotools.{Cell, GeoPoint, Grid, Polygon}
 
 object LocalDatabase {
 
@@ -9,9 +9,17 @@ object LocalDatabase {
   private var waypoints: Map[Polygon,Int] = Map()
   private var waypointsPerIndex: Map[Int,Set[Polygon]] = Map()
 
+  if (System.getProperty("os.name").toLowerCase.contains("windows")) System.setProperty("hadoop.home.dir","C:\\hadoop" )
+
   def initializeDefaults(): Unit = {
     println("Initializing defaults...")
     readWaypoints("waypoints/waypoints.csv")
+    println("Done!")
+  }
+
+  def initialize(waypointsFile: String): Unit = {
+    println("Initializing...")
+    readWaypoints(waypointsFile)
     println("Done!")
   }
 
@@ -19,6 +27,23 @@ object LocalDatabase {
     synchronized{
       this.grid = grid
       createWaypointIndexes()
+    }
+  }
+
+  def gridFromFile(filename: String, minLon: Double, minLat: Double, maxLon: Double,  maxLat: Double, stepLon: Double, stepLat: Double): Unit = {
+    val gridCells = scala.io.Source.fromFile(filename).getLines().drop(1).map{
+      line =>
+        val columns = line.split(",")
+        val id = columns.head.toInt
+        val lon = columns(1).toDouble
+        val lat = columns.last.toDouble
+        val gp = GeoPoint(lon,lat)
+        val cell = Cell(id,gp)
+        (gp,cell)
+    }.toMap
+    val loadedGrid = new Grid(minLon,minLat,maxLon,maxLat,stepLon,stepLat,gridCells)
+    synchronized {
+      this.grid = loadedGrid
     }
   }
 

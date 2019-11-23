@@ -11,15 +11,14 @@ object VoyageSparkApp {
 
   def main(args: Array[String]): Unit = {
 
-    val filename = "dataset.csv"
+    val filename = "training.csv"
     val shipType = "Cargo"
     val numPartitions = 8
 
-//    System.setProperty("hadoop.home.dir","C:\\hadoop" )
     val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
     val sc = new SparkContext(conf)
 
-    LocalDatabase.initializeDefaults()
+    LocalDatabase.initialize("waypoints/training_Cargo_waypoints_2000.0_10.csv")
 
     val gc = new GlasseasContext
     val data = gc.readData(filename,sc).filter(_.shipType.contains(shipType))

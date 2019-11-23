@@ -28,10 +28,10 @@ import scala.collection.mutable.ArrayBuffer
   * @param h absolute difference of heading
   * @param minPts number of minimum points
   */
-class DBScan(inputValues: ArrayBuffer[AISPosition], eps: Double, s: Double, h: Double, minPts: Int) {
+class DBScan(inputValues: ArrayBuffer[AISPosition], eps: Double, d: Double, s: Double, h: Double, minPts: Int) {
 
   def this(inputValues: ArrayBuffer[AISPosition], eps: Double, minPts: Int) = {
-    this(inputValues,eps,3.0,3.0,minPts)
+    this(inputValues,eps,eps,3.0,3.0,minPts)
   }
 
   /**
@@ -191,7 +191,7 @@ class DBScan(inputValues: ArrayBuffer[AISPosition], eps: Double, s: Double, h: D
 
     val rel = db.getRelation[NumberVector](TypeUtil.NUMBER_VECTOR_FIELD)
 
-    val clusters = new DBSCAN(new AISPositionSimilarity, eps, minPts).run(db).getAllClusters.asScala
+    val clusters = new DBSCAN(new AISPositionSimilarity(d,s,h), eps, minPts).run(db).getAllClusters.asScala
 
     for (cluster <- clusters) {
       val clusterGroup: ArrayBuffer[AISPosition] = ArrayBuffer()
