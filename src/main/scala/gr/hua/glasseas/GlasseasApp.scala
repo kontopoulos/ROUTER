@@ -4,7 +4,6 @@ import java.io.FileWriter
 import java.util
 import java.util.UUID
 
-import Jama.Matrix
 import de.lmu.ifi.dbs.elki.algorithm.clustering.DBSCAN
 import de.lmu.ifi.dbs.elki.data.NumberVector
 import de.lmu.ifi.dbs.elki.data.`type`.TypeUtil
