@@ -34,6 +34,10 @@ class SpatialToolkit extends Serializable {
     else Math.abs(360.0 - Math.max(first.cog,second.cog) + Math.min(first.cog,second.cog))
   }
 
+  def getProjection(speed: Double, course: Double, longitude: Double, latitude: Double, futureTimePoint: Int) = {
+
+  }
+
   /**
     * This uses the ‘haversine’ formula to calculate
     * the great-circle distance between two points – that is,
@@ -72,6 +76,20 @@ class SpatialToolkit extends Serializable {
     Math.sqrt(Math.pow(cp2.x-cp1.x,2.0)+Math.pow(cp2.y-cp1.y,2.0))/1000
   }
 
+  def cartesianToGeodetic(p: CartesianPoint): GeoPoint = {
+    /*val R = 6371
+    val r = Math.sqrt(Math.pow(p.x,2) + Math.pow(p.y,2))
+    val longitude = 180 * Math.atan2(p.y,p.x)/Math.PI
+    val latitude = 180 * Math.acos(r/R)/Math.PI
+    GeoPoint(longitude,latitude)*/
+
+    var r = Math.sqrt(p.x*p.x + p.y*p.y+ p.z*p.z)
+    var lat = Math.asin(p.z/r).toDegrees
+    var lon = Math.atan2(p.y,p.x).toDegrees
+    GeoPoint(lon,lat)
+
+  }
+
   /**
     * Converts geographic coordinates to UTM coordinate system.
     * The Universal Transverse Mercator (UTM) conformal projection uses
@@ -81,8 +99,22 @@ class SpatialToolkit extends Serializable {
     * @param p geo-point
     * @return cartesinan coordinates
     */
-  private def geodeticToCartesian(p: GeoPoint): CartesianPoint = {
-    var easting = 0.0
+  def geodeticToCartesian(p: GeoPoint): CartesianPoint = {
+    /*val R = 6371
+    val x = R*Math.cos(p.latitude.toRadians)*Math.cos(p.longitude.toRadians)
+    val y = R*Math.cos(p.latitude.toRadians)*Math.sin(p.longitude.toRadians)
+    val z = R*Math.sin(p.latitude.toRadians)
+    CartesianPoint(x,y,z)*/
+
+    val R = 6371
+    var lat = p.latitude.toRadians
+    var lon = p.longitude.toRadians
+    var x = R * Math.cos(lat)*Math.cos(lon)
+    var y = R * Math.cos(lat)*Math.sin(lon)
+    var z = R * Math.sin(lat)
+    CartesianPoint(x,y,z)
+
+    /*var easting = 0.0
     var northing = 0.0
     val zone = Math.floor(p.longitude/6+31).toInt
     var letter = ""
@@ -114,8 +146,41 @@ class SpatialToolkit extends Serializable {
     if (letter < "M") northing = northing + 10000000
     northing = Math.round(northing*100)*0.01
 
-    CartesianPoint(easting,northing)
+    CartesianPoint(easting,northing)*/
   }
+
+  def polyRegression(xy: Seq[(Double, Double)]): (Double,Double,Double) = {
+    val r = 0 until xy.size
+
+    def average[U](ts: Iterable[U])(implicit num: Numeric[U]) = num.toDouble(ts.sum) / ts.size
+
+    def x3m: Double = average(r.map(a => a * a * a))
+    def x4m: Double = average(r.map(a => a * a * a * a))
+    def x2ym =
+      xy.reduce((a, x) => (a._1 + x._1 * x._1 * x._2, 0))._1.toDouble / xy.size
+    def xym = xy.reduce((a, x) => (a._1 + x._1 * x._2, 0))._1.toDouble / xy.size
+
+    val x2m: Double = average(r.map(a => a * a))
+    val (xm, ym) = (average(xy.map(_._1)), average(xy.map(_._2)))
+    val (sxx, sxy) = (x2m - xm * xm, xym - xm * ym)
+    val sxx2: Double = x3m - xm * x2m
+    val sx2x2: Double = x4m - x2m * x2m
+    val sx2y: Double = x2ym - x2m * ym
+    val c: Double = (sx2y * sxx - sxy * sxx2) / (sxx * sx2x2 - sxx2 * sxx2)
+    val b: Double = (sxy * sx2x2 - sx2y * sxx2) / (sxx * sx2x2 - sxx2 * sxx2)
+    val a: Double = ym - b * xm - c * x2m
+
+    (a,b,c)
+
+    /*def abc(xx: Double) = a + b * xx + c * xx * xx
+
+    println(s"y = $a + ${b}x + ${c}x^2")
+    println(" Input  Approximation")
+    println(" x   y     y1")
+    xy.foreach { el => println(f"${el._1}%2d ${el._2}%3d  ${abc(el._1)}%5.1f") }*/
+  }
+
+  def interpolate(xx: Double, a: Double, b: Double, c: Double): Double = a + b * xx + c * xx * xx
 
   /**
     * Creates a convex hull from a list of geo-points

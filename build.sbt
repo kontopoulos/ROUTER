@@ -10,3 +10,6 @@ libraryDependencies += "de.lmu.ifi.dbs.elki" % "elki" % "0.7.5"
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.4.4"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-cluster-sharding-typed" % "2.5.26"
+
+libraryDependencies += "gov.nist.math" % "jama" % "1.0.3"
+

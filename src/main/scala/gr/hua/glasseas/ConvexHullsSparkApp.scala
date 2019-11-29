@@ -28,19 +28,25 @@ object ConvexHullsSparkApp {
           val positions = records.map(_._3).to[ArrayBuffer]
           val st = new SpatialToolkit
 
-          val headingDiffs = positions.sliding(2,1).map(list => st.headingDifference(list.head,list.last)).toList
+          /*val headingDiffs = positions.sliding(2,1).map(list => st.headingDifference(list.head,list.last)).toList
           val meanHeadingDiff = headingDiffs.sum/headingDiffs.size
-          val stdHeadingDiff = Math.sqrt(headingDiffs.map(d => Math.pow(Math.abs(d-meanHeadingDiff),2)).sum/headingDiffs.size)
+          val stdHeadingDiff = Math.sqrt(headingDiffs.map(d => Math.pow(Math.abs(d-meanHeadingDiff),2)).sum/headingDiffs.size)*/
 
-          val speedDiffs = positions.sliding(2,1).map(list => Math.abs(list.head.speed-list.last.speed)).toList
+          val meanHeading = positions.map(_.cog).sum/positions.size
+          val stdHeading = Math.sqrt(positions.map(p => Math.pow(Math.abs(p.cog-meanHeading),2)).sum/positions.size)
+
+          val meanSpeed = positions.map(_.speed).sum/positions.size
+          val stdSpeed = Math.sqrt(positions.map(p => Math.pow(Math.abs(p.speed-meanSpeed),2)).sum/positions.size)
+
+          /*val speedDiffs = positions.sliding(2,1).map(list => Math.abs(list.head.speed-list.last.speed)).toList
           val meanSpeedDiff = speedDiffs.sum/speedDiffs.size
-          val stdSpeedDiff = Math.sqrt(speedDiffs.map(d => Math.pow(Math.abs(d-meanSpeedDiff),2)).sum/speedDiffs.size)
+          val stdSpeedDiff = Math.sqrt(speedDiffs.map(d => Math.pow(Math.abs(d-meanSpeedDiff),2)).sum/speedDiffs.size)*/
 
           val distances = positions.map(p => GeoPoint(p.longitude,p.latitude)).sliding(2,1).map(list => st.getHaversineDistance(list.head,list.last)).toList
           val meanDistance = distances.sum/distances.size
           val stdDistance = Math.sqrt(distances.map(d => Math.pow(Math.abs(d-meanDistance),2)).sum/distances.size)
 
-          val dbscan = new DBScan(positions, 0.03,stdDistance,stdSpeedDiff,stdHeadingDiff, 6)
+          val dbscan = new DBScan(positions, 0.03,stdDistance,stdSpeed,stdHeading, 6)
           val clusters = dbscan.getTrajectoryClusters
             .zipWithIndex
             .map{ case (clusterPositions,clusterIndex) => Cluster(s"${clusterIndex}-${itinerary}@${cell.id}",itinerary,clusterPositions) }

@@ -4,6 +4,7 @@ import java.io.FileWriter
 import java.util
 import java.util.UUID
 
+import Jama.Matrix
 import de.lmu.ifi.dbs.elki.algorithm.clustering.DBSCAN
 import de.lmu.ifi.dbs.elki.data.NumberVector
 import de.lmu.ifi.dbs.elki.data.`type`.TypeUtil
@@ -15,7 +16,7 @@ import de.lmu.ifi.dbs.elki.index.tree.spatial.rstarvariants.rstar.RStarTreeFacto
 import de.lmu.ifi.dbs.elki.index.tree.spatial.rstarvariants.strategies.bulk.SortTileRecursiveBulkSplit
 import de.lmu.ifi.dbs.elki.math.geodesy.WGS84SpheroidEarthModel
 import de.lmu.ifi.dbs.elki.persistent.MemoryPageFileFactory
-import gr.hua.glasseas.geotools.{Cell, GeoPoint, Grid, Polygon, Preprocessor, SpatialToolkit}
+import gr.hua.glasseas.geotools.{CartesianPoint, Cell, GeoPoint, Grid, Polygon, Preprocessor, SpatialToolkit}
 import gr.hua.glasseas.ml.clustering.DBScan
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -26,6 +27,69 @@ import scala.collection.mutable.ArrayBuffer
 object GlasseasApp {
 
   def main(args: Array[String]): Unit = {
+
+    val st = new SpatialToolkit
+    val gc = new GlasseasContext
+    val stream = gc.readStream("test_case.csv").toList.filter(p => p.seconds >= 1439537367 && p.seconds <= 1439584177)
+    stream.foreach(println)
+    val first = stream.head
+    val second = stream.last
+    val cogDiff = st.headingDifference(first,second)
+    //val timeDiff = second.seconds - first.seconds
+    val timeDiff = 46810
+//    val timeDiff = 800
+    val numIncrements = timeDiff/180
+    val cogIncrement = cogDiff/numIncrements
+    if (first.cog - second.cog > 0) { // take into account values between 1 and 359
+      // plus
+
+    }
+    else {
+      // minus
+    }
+    println(numIncrements)
+    println(cogDiff)
+    println(cogIncrement)
+
+
+
+    /*val st = new SpatialToolkit
+    val (a,b,c) = st.polyRegression(Seq((2.0,1.0),(4.0,4.0),(6.0,2.0)))
+    println(s"y = $a + ${b}x + ${c}x^2")
+    println(st.interpolate(2.0,a,b,c))*/
+
+    /*
+ *Solving three variable linear equation system
+ * 3x + 2y -  z =  1 ---&gt; Eqn(1)
+ * 2x - 2y + 4z = -2 ---&gt; Eqn(2)
+ * -x + y/2-  z =  0 ---&gt; Eqn(3)
+ */
+
+    //Creating  Arrays Representing Equations
+    /*val lhsArray = Array(Array(3.0, 2.0, -1.0), Array(2.0, -2.0, 4.0), Array(-1.0, 0.5, -1.0))
+    val rhsArray = Array(1.0, -2.0, 0.0)
+    //Creating Matrix Objects with arrays
+    val lhs = new Matrix(lhsArray)
+    val rhs = new Matrix(rhsArray, 3)
+    //Calculate Solved Matrix
+    val ans = lhs.solve(rhs);
+    //Printing Answers
+    System.out.println("x = " + Math.round(ans.get(0, 0)));
+    System.out.println("y = " + Math.round(ans.get(1, 0)));
+    System.out.println("z = " + Math.round(ans.get(2, 0)));*/
+
+    /*val gp = GeoPoint(23.617884817336883,37.935926630470185)
+    val st = new SpatialToolkit
+    val cp = st.geodeticToCartesian(gp)
+    println(gp)
+    println(cp)
+    println(st.cartesianToGeodetic(cp))
+    println("=============")
+    val gp2 = GeoPoint(2.8680394,-54.072878)
+    val cp2 = st.geodeticToCartesian(gp2)
+    println(gp2)
+    println(cp2)
+    println(st.cartesianToGeodetic(cp2))*/
 
     /*val list = scala.io.Source.fromFile("test.csv").getLines().drop(1).map{
       line =>
