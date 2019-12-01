@@ -34,8 +34,20 @@ class SpatialToolkit extends Serializable {
     else Math.abs(360.0 - Math.max(first.cog,second.cog) + Math.min(first.cog,second.cog))
   }
 
-  def getProjection(speed: Double, course: Double, longitude: Double, latitude: Double, futureTimePoint: Int) = {
-
+  def getProjection(speed: Double, course: Double, longitude: Double, latitude: Double, currentTimePoint: Long, futureTimePoint: Long): GeoPoint = {
+    val heading = course.toRadians
+    val sog = speed*1.852 // convert to kmh
+    if (sog != 0.0) {
+      val lon = longitude.toRadians
+      val lat = latitude.toRadians
+      val delta = (futureTimePoint - currentTimePoint) * sog / 3600 / 6371
+      val newLatitude: Double = BigDecimal(Math.asin((Math.sin(lat) * Math.cos(delta)) + (Math.cos(lat) * Math.sin(delta) *
+        Math.cos(heading))).toDegrees).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
+      val newLongitude: Double = BigDecimal((lon + Math.atan2(Math.sin(heading) * Math.sin(delta) * Math.cos(lat),
+        Math.cos(delta) - (Math.sin(lat) * Math.sin(newLatitude.toRadians)))).toDegrees).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
+      GeoPoint(newLongitude,newLatitude)
+    }
+    else GeoPoint(longitude,latitude)
   }
 
   /**

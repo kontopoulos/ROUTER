@@ -15,7 +15,7 @@ import de.lmu.ifi.dbs.elki.index.tree.spatial.rstarvariants.rstar.RStarTreeFacto
 import de.lmu.ifi.dbs.elki.index.tree.spatial.rstarvariants.strategies.bulk.SortTileRecursiveBulkSplit
 import de.lmu.ifi.dbs.elki.math.geodesy.WGS84SpheroidEarthModel
 import de.lmu.ifi.dbs.elki.persistent.MemoryPageFileFactory
-import gr.hua.glasseas.geotools.{CartesianPoint, Cell, GeoPoint, Grid, Polygon, Preprocessor, SpatialToolkit}
+import gr.hua.glasseas.geotools.{AISPosition, CartesianPoint, Cell, GeoPoint, Grid, Polygon, Preprocessor, SpatialToolkit}
 import gr.hua.glasseas.ml.clustering.DBScan
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -27,29 +27,64 @@ object GlasseasApp {
 
   def main(args: Array[String]): Unit = {
 
+    val test = new FileWriter("test_projection_1.csv")
+    test.write("MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
+
     val st = new SpatialToolkit
     val gc = new GlasseasContext
-    val stream = gc.readStream("test_case.csv").toList.filter(p => p.seconds >= 1439537367 && p.seconds <= 1439584177)
-    stream.foreach(println)
-    val first = stream.head
-    val second = stream.last
-    val cogDiff = st.headingDifference(first,second)
-    //val timeDiff = second.seconds - first.seconds
-    val timeDiff = 46810
-//    val timeDiff = 800
-    val numIncrements = timeDiff/180
-    val cogIncrement = cogDiff/numIncrements
-    if (first.cog - second.cog > 0) { // take into account values between 1 and 359
-      // plus
+    val stream = gc.readStream("test_case_1.csv").toList//.filter(p => p.seconds >= 1439537367 && p.seconds <= 1439584177)
+    val interpolated: ArrayBuffer[AISPosition] = ArrayBuffer()
+    stream.sliding(2,1).foreach{
+      case positions =>
+        //    stream.foreach(println)
+        val first = positions.head
+        val second = positions.last
+        val cogDiff = st.headingDifference(first,second)
+        val sogDiff = Math.abs(first.speed-second.speed)
+        val timeDiff = second.seconds - first.seconds
+        //    val timeDiff = 46810
+        val timeIncrement = 180
+        //    val timeDiff = 800
+        val numIncrements = timeDiff/timeIncrement - 1
+        val cogIncrement = cogDiff/numIncrements
+        val sogIncrement = sogDiff/numIncrements
+        val cogIncrementType = if (first.cog - second.cog > 0) "-" else "+"
+        val sogIncrementType = if (first.speed - second.speed > 0) "-" else "+"
 
-    }
-    else {
-      // minus
-    }
-    println(numIncrements)
-    println(cogDiff)
-    println(cogIncrement)
+        if (timeDiff > 360) {
+          val interpolatedPositions = interpolate(st, cogIncrementType, cogIncrement, sogIncrementType, sogIncrement, timeIncrement, first, numIncrements.toInt)
+          interpolatedPositions.foreach(p => interpolated.append(p))
+        }
 
+      /*println(numIncrements)
+      println(cogDiff)
+      println(cogIncrement)*/
+    }
+    interpolated.foreach(p => test.write(p + "\n"))
+    test.close()
+
+
+
+    def interpolate(st: SpatialToolkit, cogIncrementType: String, cogIncrement: Double, sogIncrementType: String, sogIncrement: Double, timeIncrement: Long, first: AISPosition, numIncrements: Int): ArrayBuffer[AISPosition] = {
+      val arr: ArrayBuffer[AISPosition] = ArrayBuffer()
+      var currentIncrement = 1
+      var currentCog = first.cog
+      var currentSog = first.speed
+      var currentTimestamp = first.seconds
+      var currentLongitude = first.longitude
+      var currentLatitude = first.latitude
+      while (currentIncrement <= numIncrements) {
+        val gp = st.getProjection(currentSog, currentCog, currentLongitude, currentLatitude, currentTimestamp, currentTimestamp + timeIncrement)
+        currentLongitude = gp.longitude
+        currentLatitude = gp.latitude
+        currentTimestamp += timeIncrement
+        currentCog = if (cogIncrementType == "+") currentCog + cogIncrement else currentCog - cogIncrement
+        currentSog = if (sogIncrementType == "+") currentSog + sogIncrement else currentSog - sogIncrement
+        arr.append(AISPosition(first.id, first.imo, currentLatitude, currentLongitude, currentCog, currentCog, currentSog, currentTimestamp, currentTimestamp.toString, first.shipname, first.shipType, first.destination, first.annotation))
+        currentIncrement += 1
+      }
+      arr
+    }
 
 
     /*val st = new SpatialToolkit
