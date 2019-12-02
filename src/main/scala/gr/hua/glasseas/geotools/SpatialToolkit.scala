@@ -161,38 +161,23 @@ class SpatialToolkit extends Serializable {
     CartesianPoint(easting,northing)*/
   }
 
-  def polyRegression(xy: Seq[(Double, Double)]): (Double,Double,Double) = {
-    val r = 0 until xy.size
+  def lagrangeInterpolation(x: Array[Double], y: Array[Double], xPoint: Double): Double = {
+    var sum = 0.0
+    var product = 1.0
 
-    def average[U](ts: Iterable[U])(implicit num: Numeric[U]) = num.toDouble(ts.sum) / ts.size
+    // Peforming Arithmetic Operation
+    for (i <- 0 until x.length) {
+      for (j <- 0 until y.length) {
+        if (j != i) {
+          product *= (xPoint - x(j)) / (x(i) - x(j))
+        }
+      }
+      sum += product * y(i)
 
-    def x3m: Double = average(r.map(a => a * a * a))
-    def x4m: Double = average(r.map(a => a * a * a * a))
-    def x2ym =
-      xy.reduce((a, x) => (a._1 + x._1 * x._1 * x._2, 0))._1.toDouble / xy.size
-    def xym = xy.reduce((a, x) => (a._1 + x._1 * x._2, 0))._1.toDouble / xy.size
-
-    val x2m: Double = average(r.map(a => a * a))
-    val (xm, ym) = (average(xy.map(_._1)), average(xy.map(_._2)))
-    val (sxx, sxy) = (x2m - xm * xm, xym - xm * ym)
-    val sxx2: Double = x3m - xm * x2m
-    val sx2x2: Double = x4m - x2m * x2m
-    val sx2y: Double = x2ym - x2m * ym
-    val c: Double = (sx2y * sxx - sxy * sxx2) / (sxx * sx2x2 - sxx2 * sxx2)
-    val b: Double = (sxy * sx2x2 - sx2y * sxx2) / (sxx * sx2x2 - sxx2 * sxx2)
-    val a: Double = ym - b * xm - c * x2m
-
-    (a,b,c)
-
-    /*def abc(xx: Double) = a + b * xx + c * xx * xx
-
-    println(s"y = $a + ${b}x + ${c}x^2")
-    println(" Input  Approximation")
-    println(" x   y     y1")
-    xy.foreach { el => println(f"${el._1}%2d ${el._2}%3d  ${abc(el._1)}%5.1f") }*/
+      product = 1;    // Must set to 1
+    }
+    sum
   }
-
-  def interpolate(xx: Double, a: Double, b: Double, c: Double): Double = a + b * xx + c * xx * xx
 
   /**
     * Creates a convex hull from a list of geo-points

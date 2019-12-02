@@ -27,7 +27,36 @@ object GlasseasApp {
 
   def main(args: Array[String]): Unit = {
 
-    val test = new FileWriter("test_projection_1.csv")
+    val st = new SpatialToolkit
+
+    val lons = Array(20.78217,20.86471,22.86208)
+    val lats = Array(37.33715,37.22446,36.3932)
+    val x: Array[Double] = Array.fill(lons.length)(0.0)
+    val y: Array[Double] = Array.fill(lats.length)(0.0)
+    val z: Array[Double] = Array.fill(lats.length)(0.0)
+
+    for (i <- 0 until lons.length) {
+      val gp = GeoPoint(lons(i),lats(i))
+      val cp = st.geodeticToCartesian(gp)
+      x(i) = cp.x
+      y(i) = cp.y
+      z(i) = cp.z
+    }
+
+    val lonPoint = 21.0
+    val latPoint = 37.0
+    val xPoint = st.geodeticToCartesian(GeoPoint(lonPoint,latPoint)).x
+
+    val yPoint = st.lagrangeInterpolation(x,y,xPoint)
+
+    val g = st.cartesianToGeodetic(CartesianPoint(xPoint,yPoint,z.sum/z.length))
+    println(g)
+
+
+
+    println(s"x = $xPoint, y = $yPoint")
+
+    /*val test = new FileWriter("test_projection_1.csv")
     test.write("MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
 
     val st = new SpatialToolkit
@@ -84,7 +113,7 @@ object GlasseasApp {
         currentIncrement += 1
       }
       arr
-    }
+    }*/
 
 
     /*val st = new SpatialToolkit
