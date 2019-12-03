@@ -174,7 +174,7 @@ class SpatialToolkit extends Serializable {
       }
       sum += product * y(i)
 
-      product = 1;    // Must set to 1
+      product = 1 // Must set to 1
     }
     sum
   }

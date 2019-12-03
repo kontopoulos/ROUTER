@@ -1,8 +1,9 @@
 package gr.hua.glasseas
 
 import java.io.FileWriter
+import java.text.SimpleDateFormat
 import java.util
-import java.util.UUID
+import java.util.{Date, Locale, TimeZone, UUID}
 
 import de.lmu.ifi.dbs.elki.algorithm.clustering.DBSCAN
 import de.lmu.ifi.dbs.elki.data.NumberVector
@@ -27,10 +28,10 @@ object GlasseasApp {
 
   def main(args: Array[String]): Unit = {
 
-    val st = new SpatialToolkit
+    /*val st = new SpatialToolkit
 
-    val lons = Array(20.78217,20.86471,22.86208)
-    val lats = Array(37.33715,37.22446,36.3932)
+    val lons = Array(-2.427067,-2.4024329,2.190433)
+    val lats = Array(36.338089,36.341011,41.299)
     val x: Array[Double] = Array.fill(lons.length)(0.0)
     val y: Array[Double] = Array.fill(lats.length)(0.0)
     val z: Array[Double] = Array.fill(lats.length)(0.0)
@@ -43,46 +44,79 @@ object GlasseasApp {
       z(i) = cp.z
     }
 
-    val lonPoint = 21.0
+    val lonPoint = 2.0
     val latPoint = 37.0
     val xPoint = st.geodeticToCartesian(GeoPoint(lonPoint,latPoint)).x
 
-    val yPoint = st.lagrangeInterpolation(x,y,xPoint)
+    val yPoint = st.lagrangeInterpolation(lons,lats,lonPoint)
 
-    val g = st.cartesianToGeodetic(CartesianPoint(xPoint,yPoint,z.sum/z.length))
-    println(g)
+    val g = st.cartesianToGeodetic(CartesianPoint(xPoint,yPoint,z(1)))
+    //println(g)
 
 
 
-    println(s"x = $xPoint, y = $yPoint")
+    println(s"x = $lonPoint, y = $yPoint")*/
 
-    /*val test = new FileWriter("test_projection_1.csv")
+    val test = new FileWriter("test_projection_1.csv")
     test.write("MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
+
+    val timeIncrement = 180
 
     val st = new SpatialToolkit
     val gc = new GlasseasContext
     val stream = gc.readStream("test_case_1.csv").toList//.filter(p => p.seconds >= 1439537367 && p.seconds <= 1439584177)
     val interpolated: ArrayBuffer[AISPosition] = ArrayBuffer()
-    stream.sliding(2,1).foreach{
+    stream.groupBy(p => (p.longitude,p.latitude)).filter(_._2.size == 1).values.flatten.toList.sortBy(_.seconds).sliding(3,1).foreach{
       case positions =>
         //    stream.foreach(println)
         val first = positions.head
-        val second = positions.last
-        val cogDiff = st.headingDifference(first,second)
-        val sogDiff = Math.abs(first.speed-second.speed)
-        val timeDiff = second.seconds - first.seconds
+        val second = positions(1)
+        val third = positions.last
+
+        val x = positions.map(_.longitude).toArray
+        val y = positions.map(_.latitude).toArray
+
+        val timeDiff = Math.abs(second.seconds - third.seconds)
+
         //    val timeDiff = 46810
-        val timeIncrement = 180
         //    val timeDiff = 800
         val numIncrements = timeDiff/timeIncrement - 1
-        val cogIncrement = cogDiff/numIncrements
-        val sogIncrement = sogDiff/numIncrements
-        val cogIncrementType = if (first.cog - second.cog > 0) "-" else "+"
-        val sogIncrementType = if (first.speed - second.speed > 0) "-" else "+"
 
-        if (timeDiff > 360) {
-          val interpolatedPositions = interpolate(st, cogIncrementType, cogIncrement, sogIncrementType, sogIncrement, timeIncrement, first, numIncrements.toInt)
-          interpolatedPositions.foreach(p => interpolated.append(p))
+        val longitudeDiff =
+          if (second.longitude < 0 && third.longitude < 0) Math.abs(Math.abs(second.longitude) - Math.abs(third.longitude))
+          else if (second.longitude > 0 && third.longitude > 0) Math.abs(second.longitude - third.longitude)
+          else Math.abs(second.longitude) + Math.abs(third.longitude)
+        val longitudeIncrement = longitudeDiff/numIncrements
+
+        if (timeDiff > 360 && longitudeDiff != 0.0) {
+          var currentIncrement = 1
+          var currentLongitude = second.longitude + longitudeIncrement
+          var currentSeconds = second.seconds + timeIncrement
+          var previousLongitude = second.longitude
+          var previousLatitude = second.latitude
+          while (currentIncrement != numIncrements) {
+            val interpolatedLatitude = st.lagrangeInterpolation(x,y,currentLongitude)
+            val distance = st.getHaversineDistance(GeoPoint(previousLongitude,previousLatitude),GeoPoint(currentLongitude,interpolatedLatitude))
+            val currentSpeed = distance/0.05/1.852 // convert to knots
+
+            val date = new Date(currentSeconds*1000);
+            val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val formattedDate = sdf.format(date)
+
+            val dl = if (previousLongitude < 0 && currentLongitude < 0) Math.abs(Math.abs(previousLongitude) - Math.abs(currentLongitude))
+              else if (previousLongitude > 0 && currentLongitude > 0) Math.abs(previousLongitude - currentLongitude)
+              else Math.abs(previousLongitude) + Math.abs(currentLongitude)
+            val X = Math.cos(interpolatedLatitude.toRadians)*Math.sin(dl.toRadians)
+            val Y = Math.cos(previousLatitude.toRadians)*Math.sin(interpolatedLatitude.toRadians) - Math.sin(previousLatitude.toRadians)*Math.cos(interpolatedLatitude.toRadians)*Math.cos(dl.toRadians)
+            val bearing = Math.atan2(X,Y).toDegrees.toInt.toDouble
+
+            interpolated.append(AISPosition(second.id,second.imo,interpolatedLatitude,currentLongitude,bearing,bearing,(currentSpeed*10).toInt/10.0,currentSeconds,formattedDate,second.shipname,second.shipType,second.destination,second.annotation))
+            previousLongitude = currentLongitude
+            previousLatitude = interpolatedLatitude
+            currentLongitude += longitudeIncrement
+            currentSeconds += timeIncrement
+            currentIncrement += 1
+          }
         }
 
       /*println(numIncrements)
@@ -91,29 +125,6 @@ object GlasseasApp {
     }
     interpolated.foreach(p => test.write(p + "\n"))
     test.close()
-
-
-
-    def interpolate(st: SpatialToolkit, cogIncrementType: String, cogIncrement: Double, sogIncrementType: String, sogIncrement: Double, timeIncrement: Long, first: AISPosition, numIncrements: Int): ArrayBuffer[AISPosition] = {
-      val arr: ArrayBuffer[AISPosition] = ArrayBuffer()
-      var currentIncrement = 1
-      var currentCog = first.cog
-      var currentSog = first.speed
-      var currentTimestamp = first.seconds
-      var currentLongitude = first.longitude
-      var currentLatitude = first.latitude
-      while (currentIncrement <= numIncrements) {
-        val gp = st.getProjection(currentSog, currentCog, currentLongitude, currentLatitude, currentTimestamp, currentTimestamp + timeIncrement)
-        currentLongitude = gp.longitude
-        currentLatitude = gp.latitude
-        currentTimestamp += timeIncrement
-        currentCog = if (cogIncrementType == "+") currentCog + cogIncrement else currentCog - cogIncrement
-        currentSog = if (sogIncrementType == "+") currentSog + sogIncrement else currentSog - sogIncrement
-        arr.append(AISPosition(first.id, first.imo, currentLatitude, currentLongitude, currentCog, currentCog, currentSog, currentTimestamp, currentTimestamp.toString, first.shipname, first.shipType, first.destination, first.annotation))
-        currentIncrement += 1
-      }
-      arr
-    }*/
 
 
     /*val st = new SpatialToolkit
