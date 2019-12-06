@@ -13,7 +13,7 @@ object LocalDatabase {
 
   def initializeDefaults(): Unit = {
     println("Initializing defaults...")
-    readWaypoints("waypoints/waypoints.csv")
+    readWaypoints("waypoints/training_Cargo_waypoints_2000.0_10.csv")
     println("Done!")
   }
 

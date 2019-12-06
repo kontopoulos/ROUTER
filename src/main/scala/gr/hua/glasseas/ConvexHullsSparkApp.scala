@@ -12,6 +12,8 @@ object ConvexHullsSparkApp {
 
     val filename = "training_voyages.csv"
 
+    LocalDatabase.initializeDefaults()
+
     val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
     val sc = new SparkContext(conf)
 
