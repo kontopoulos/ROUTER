@@ -2,7 +2,7 @@ package gr.hua.glasseas
 
 import java.text.SimpleDateFormat
 
-import gr.hua.glasseas.geotools.AISPosition
+import gr.hua.glasseas.geotools.{AISPosition, GeoPoint}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
@@ -29,8 +29,8 @@ class GlasseasContext extends Serializable {
         val itinerary = parts(1)
         val mmsi = parts(2).toInt
         val imo = if (parts(3) == "NULL") -1 else parts(3).toInt
-        val lat = BigDecimal(parts(4).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
-        val lon = BigDecimal(parts(5).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
+        val lat = parts(4).toDouble//BigDecimal(parts(4).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
+        val lon = parts(5).toDouble//BigDecimal(parts(5).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
         val cog = BigDecimal(parts(6).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
         val heading = if (parts(7) == "NULL") 0.0 else BigDecimal(parts(7).toDouble).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble
         val speed = BigDecimal(parts(8).toDouble/10.0).setScale(6, BigDecimal.RoundingMode.HALF_UP).toDouble

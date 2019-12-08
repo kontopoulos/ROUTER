@@ -29,7 +29,7 @@ object WaypointsApp {
     val inputValues = gc.readStream(filename).filter{
       p =>
         if (p.speed == 0.0 && p.shipType.contains(shipType)) {
-          val cell = LocalDatabase.grid.getEnclosingCell(GeoPoint(p.longitude, p.latitude))
+          val cell = LocalDatabase.grid.getEnclosingCell(GeoPoint(p.longitude, p.latitude)).get
           positionsPerCell.get(cell) match {
             case Some(set) =>
               if (!set.contains(p.id)) {

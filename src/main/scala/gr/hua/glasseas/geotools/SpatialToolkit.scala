@@ -89,15 +89,9 @@ class SpatialToolkit extends Serializable {
   }
 
   def cartesianToGeodetic(p: CartesianPoint): GeoPoint = {
-    /*val R = 6371
-    val r = Math.sqrt(Math.pow(p.x,2) + Math.pow(p.y,2))
-    val longitude = 180 * Math.atan2(p.y,p.x)/Math.PI
-    val latitude = 180 * Math.acos(r/R)/Math.PI
-    GeoPoint(longitude,latitude)*/
-
-    var r = Math.sqrt(p.x*p.x + p.y*p.y+ p.z*p.z)
-    var lat = Math.asin(p.z/r).toDegrees
-    var lon = Math.atan2(p.y,p.x).toDegrees
+    val r = Math.sqrt(p.x*p.x + p.y*p.y+ p.z*p.z)
+    val lat = Math.asin(p.z/r).toDegrees
+    val lon = Math.atan2(p.y,p.x).toDegrees
     GeoPoint(lon,lat)
 
   }
@@ -112,60 +106,27 @@ class SpatialToolkit extends Serializable {
     * @return cartesinan coordinates
     */
   def geodeticToCartesian(p: GeoPoint): CartesianPoint = {
-    /*val R = 6371
-    val x = R*Math.cos(p.latitude.toRadians)*Math.cos(p.longitude.toRadians)
-    val y = R*Math.cos(p.latitude.toRadians)*Math.sin(p.longitude.toRadians)
-    val z = R*Math.sin(p.latitude.toRadians)
-    CartesianPoint(x,y,z)*/
-
-    val R = 6371
-    var lat = p.latitude.toRadians
-    var lon = p.longitude.toRadians
-    var x = R * Math.cos(lat)*Math.cos(lon)
-    var y = R * Math.cos(lat)*Math.sin(lon)
-    var z = R * Math.sin(lat)
+        val R = 6371
+    val lat = p.latitude.toRadians
+    val lon = p.longitude.toRadians
+    val x = R * Math.cos(lat)*Math.cos(lon)
+    val y = R * Math.cos(lat)*Math.sin(lon)
+    val z = R * Math.sin(lat)
     CartesianPoint(x,y,z)
-
-    /*var easting = 0.0
-    var northing = 0.0
-    val zone = Math.floor(p.longitude/6+31).toInt
-    var letter = ""
-
-    if (p.latitude < -72) letter = "C"
-    else if (p.latitude < -64) letter = "D"
-    else if (p.latitude < -56) letter = "E"
-    else if (p.latitude < -48) letter = "F"
-    else if (p.latitude < -40) letter = "G"
-    else if (p.latitude < -32) letter = "H"
-    else if (p.latitude < -24) letter = "J"
-    else if (p.latitude < -16) letter = "K"
-    else if (p.latitude < -8) letter = "L"
-    else if (p.latitude < 0) letter = "M"
-    else if (p.latitude < 8) letter = "N"
-    else if (p.latitude < 16) letter = "P"
-    else if (p.latitude < 24) letter = "R"
-    else if (p.latitude < 32) letter = "R"
-    else if (p.latitude < 40) letter = "S"
-    else if (p.latitude < 48) letter = "T"
-    else if (p.latitude < 56) letter = "U"
-    else if (p.latitude < 64) letter= "V"
-    else if (p.latitude < 72) letter = "W"
-    else letter = "X"
-
-    easting = 0.5*Math.log((1+Math.cos(p.latitude*Math.PI/180)*Math.sin(p.longitude*Math.PI/180-(6*zone-183)*Math.PI/180))/(1-Math.cos(p.latitude*Math.PI/180)*Math.sin(p.longitude*Math.PI/180-(6*zone-183)*Math.PI/180)))*0.9996*6399593.62/Math.pow(1+Math.pow(0.0820944379, 2)*Math.pow(Math.cos(p.latitude*Math.PI/180), 2), 0.5)*(1+ Math.pow(0.0820944379,2)/2*Math.pow(0.5*Math.log((1+Math.cos(p.latitude*Math.PI/180)*Math.sin(p.longitude*Math.PI/180-(6*zone-183)*Math.PI/180))/(1-Math.cos(p.latitude*Math.PI/180)*Math.sin(p.longitude*Math.PI/180-(6*zone-183)*Math.PI/180))),2)*Math.pow(Math.cos(p.latitude*Math.PI/180),2)/3)+500000
-    easting = Math.round(easting*100)*0.01
-    northing = (Math.atan(Math.tan(p.latitude*Math.PI/180)/Math.cos(p.longitude*Math.PI/180-(6*zone -183)*Math.PI/180))-p.latitude*Math.PI/180)*0.9996*6399593.625/Math.sqrt(1+0.006739496742*Math.pow(Math.cos(p.latitude*Math.PI/180),2))*(1+0.006739496742/2*Math.pow(0.5*Math.log((1+Math.cos(p.latitude*Math.PI/180)*Math.sin(p.longitude*Math.PI/180-(6*zone -183)*Math.PI/180))/(1-Math.cos(p.latitude*Math.PI/180)*Math.sin(p.longitude*Math.PI/180-(6*zone -183)*Math.PI/180))),2)*Math.pow(Math.cos(p.latitude*Math.PI/180),2))+0.9996*6399593.625*(p.latitude*Math.PI/180-0.005054622556*(p.latitude*Math.PI/180+Math.sin(2*p.latitude*Math.PI/180)/2)+4.258201531e-05*(3*(p.latitude*Math.PI/180+Math.sin(2*p.latitude*Math.PI/180)/2)+Math.sin(2*p.latitude*Math.PI/180)*Math.pow(Math.cos(p.latitude*Math.PI/180),2))/4-1.674057895e-07*(5*(3*(p.latitude*Math.PI/180+Math.sin(2*p.latitude*Math.PI/180)/2)+Math.sin(2*p.latitude*Math.PI/180)*Math.pow(Math.cos(p.latitude*Math.PI/180),2))/4+Math.sin(2*p.latitude*Math.PI/180)*Math.pow(Math.cos(p.latitude*Math.PI/180),2)*Math.pow(Math.cos(p.latitude*Math.PI/180),2))/3)
-    if (letter < "M") northing = northing + 10000000
-    northing = Math.round(northing*100)*0.01
-
-    CartesianPoint(easting,northing)*/
   }
 
+  /**
+    *
+    * @param x
+    * @param y
+    * @param xPoint
+    * @return
+    */
   def lagrangeInterpolation(x: Array[Double], y: Array[Double], xPoint: Double): Double = {
     var sum = 0.0
     var product = 1.0
 
-    // Peforming Arithmetic Operation
+    // Performing Arithmetic Operation
     for (i <- 0 until x.length) {
       for (j <- 0 until y.length) {
         if (j != i) {

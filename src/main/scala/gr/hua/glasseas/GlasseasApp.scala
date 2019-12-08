@@ -28,6 +28,72 @@ object GlasseasApp {
 
   def main(args: Array[String]): Unit = {
 
+    /*LocalDatabase.initializeDefaults()
+    LocalDatabase.readConvexHulls("convexhulls_600.csv")
+    val cellIds = LocalDatabase.convexHullsPerIndex.keys.toSet
+
+    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
+    val sc = new SparkContext(conf)
+    val gc = new GlasseasContext
+    val data = gc.readData("testing_no_waypoints.csv",sc)
+    val totalPositions = data.count().toDouble
+    val inCells = data.filter(p => cellIds.contains(LocalDatabase.grid.getEnclosingCell(GeoPoint(p.longitude,p.latitude)).get.id)).count().toDouble
+    println(totalPositions)
+    println(inCells)
+    println(inCells/totalPositions)*/
+
+
+    LocalDatabase.initializeDefaults()
+    LocalDatabase.readConvexHulls("convexhulls_180.csv")
+
+    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
+    val sc = new SparkContext(conf)
+    val gc = new GlasseasContext
+    val data = gc.readVoyageData("testing_Cargo_voyages.csv",sc)//.filter(p => LocalDatabase.getEnclosingWaypoint(GeoPoint(p.longitude,p.latitude)).isEmpty)
+    val totalPositions = data.count().toDouble
+    val inHulls = data.filter{
+      case (itinerary,p) =>
+        LocalDatabase.convexHulls
+         LocalDatabase.getEnclosingConvexHull(GeoPoint(p.longitude,p.latitude)) match {
+           case Some(hull) =>
+             val hullItinerary = hull._2.split("-").last.split("@").head
+             if (hullItinerary == itinerary) true else false
+           case None => false
+         }
+    }.count().toDouble
+    println(totalPositions)
+    println(inHulls)
+    println(inHulls/totalPositions)
+
+
+
+
+    /*LocalDatabase.initializeDefaults()
+
+    val gc = new GlasseasContext
+    val w = new FileWriter("testing_no_waypoints.csv")
+    w.write("MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
+    gc.readStream("testing.csv").foreach{
+      p =>
+        if (LocalDatabase.getEnclosingWaypoint(GeoPoint(p.longitude,p.latitude)).isEmpty) w.write(p + "\n")
+    }
+    w.close()*/
+
+    /*LocalDatabase.initializeDefaults()
+    LocalDatabase.readConvexHulls("convexhulls_180.csv")
+    val gc = new GlasseasContext
+    var idx = 0.0
+    var truePositives = 0.0
+    gc.readStream("testing_no_waypoints.csv").foreach{
+      p =>
+        idx += 1.0
+        if (LocalDatabase.getEnclosingConvexHull(GeoPoint(p.longitude,p.latitude)).nonEmpty) truePositives += 1.0
+    }
+    println(idx)
+    println(truePositives)
+    println(truePositives/idx)*/
+
+
     /*val st = new SpatialToolkit
 
     val lons = Array(-2.427067,-2.4024329,2.190433)
@@ -57,7 +123,7 @@ object GlasseasApp {
 
     println(s"x = $lonPoint, y = $yPoint")*/
 
-    val test = new FileWriter("test_projection_1.csv")
+    /*val test = new FileWriter("test_projection_1.csv")
     test.write("MMSI,IMO,LATITUDE,LONGITUDE,COG,HEADING,SOG,TIMESTAMP,NAME,SHIP_TYPE,DESTINATION,ANNOTATION\n")
 
     val timeIncrement = 180
@@ -69,7 +135,6 @@ object GlasseasApp {
     stream.groupBy(p => (p.longitude,p.latitude)).filter(_._2.size == 1).values.flatten.toList.sortBy(_.seconds).sliding(3,1).foreach{
       case positions =>
         //    stream.foreach(println)
-        val first = positions.head
         val second = positions(1)
         val third = positions.last
 
@@ -118,13 +183,9 @@ object GlasseasApp {
             currentIncrement += 1
           }
         }
-
-      /*println(numIncrements)
-      println(cogDiff)
-      println(cogIncrement)*/
     }
     interpolated.foreach(p => test.write(p + "\n"))
-    test.close()
+    test.close()*/
 
 
     /*val st = new SpatialToolkit

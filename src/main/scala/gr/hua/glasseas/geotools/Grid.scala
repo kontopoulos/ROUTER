@@ -26,7 +26,7 @@ class Grid(val minLon: Double, val minLat: Double, val maxLon: Double, val maxLa
     * @param p geo-point
     * @return
     */
-  def getEnclosingCell(p: GeoPoint): Cell = {
+  def getEnclosingCell(p: GeoPoint): Option[Cell] = {
     val x = Math.round(p.longitude * MU)
     val y = Math.round(p.latitude * MU)
     val xStart = Math.round(minLon * MU)
@@ -37,7 +37,10 @@ class Grid(val minLon: Double, val minLat: Double, val maxLon: Double, val maxLa
     val lly = y - ((y - yStart) % yStep)
     val lowLeftX = llx.toDouble / MU
     val lowLeftY = lly.toDouble / MU
-    cells(GeoPoint(lowLeftX,lowLeftY))
+    cells.get(GeoPoint(lowLeftX,lowLeftY)) match {
+      case Some(cell) => Some(cell)
+      case None => None
+    }
   }
 
   def save(filename: String): Unit = {

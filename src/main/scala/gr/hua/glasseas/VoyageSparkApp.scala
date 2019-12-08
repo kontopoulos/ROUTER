@@ -1,8 +1,9 @@
 package gr.hua.glasseas
 
-import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.{Date, UUID}
 
-import gr.hua.glasseas.geotools.{AISPosition, GeoPoint, Voyage}
+import gr.hua.glasseas.geotools.{AISPosition, GeoPoint, SpatialToolkit, Voyage}
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ArrayBuffer
@@ -11,14 +12,14 @@ object VoyageSparkApp {
 
   def main(args: Array[String]): Unit = {
 
-    val filename = "training.csv"
+    val filename = "testing.csv"
     val shipType = "Cargo"
     val numPartitions = 8
 
+    LocalDatabase.initialize("waypoints/training_Cargo_waypoints_2000.0_10.csv")
+
     val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
     val sc = new SparkContext(conf)
-
-    LocalDatabase.initialize("waypoints/training_Cargo_waypoints_2000.0_10.csv")
 
     val gc = new GlasseasContext
     val data = gc.readData(filename,sc).filter(_.shipType.contains(shipType))
@@ -41,7 +42,8 @@ object VoyageSparkApp {
 
             def beginNewVoyage(newWaypoint: Int): Unit = {
               val itinerary = s"${previousPort}_to_$newWaypoint"
-              val completedVoyage = Voyage(voyageId,itinerary,voyage)
+              // remove positions located inside waypoints
+              val completedVoyage = Voyage(voyageId,itinerary,voyage.filter(p => LocalDatabase.getEnclosingWaypoint(GeoPoint(p.longitude,p.latitude)).isEmpty))
               voyages.append(completedVoyage)
               voyage = ArrayBuffer() // begin new voyage
               previousPort = newWaypoint
@@ -68,7 +70,7 @@ object VoyageSparkApp {
             }
         }
         voyages
-    }.filter(v => !v.itinerary.contains("-1")).saveAsTextFile(s"$filename-$shipType-voyages")
+    }.filter(v => !v.itinerary.contains("-1") && v.voyagePositions.size >= 3).saveAsTextFile(s"$filename-$shipType-voyages")
   }
 
 }
