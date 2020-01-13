@@ -8,7 +8,7 @@ import com.typesafe.config.ConfigFactory
 import gr.hua.glasseas.cluster.threads.Ship
 import gr.hua.glasseas.cluster.threads.Ship._
 
-object VoyageAkkaApp {
+object TestAkkaApp {
 
   def main(args: Array[String]): Unit = {
 

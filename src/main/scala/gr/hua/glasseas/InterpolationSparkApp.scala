@@ -11,25 +11,28 @@ import scala.collection.mutable.ArrayBuffer
 object InterpolationSparkApp {
 
   def main(args: Array[String]): Unit = {
-    val filename = "training_voyages.csv"
 
-    LocalDatabase.initializeDefaults()
+    val shipType = "Cargo"
+
+    LocalDatabase.initialize(s"waypoints/dataset_${shipType}_waypoints_2000.0_10.csv")
 
     val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
     val sc = new SparkContext(conf)
 
-    val gc = new GlasseasContext
-    val data = gc.readVoyageData(filename,sc)
+    val filename = s"dataset_${shipType}_voyages.csv"
 
-    data.groupBy(_._2.annotation).map{
-      case (voyageId,positionsWithItinerary) =>
+    val gc = new GlasseasContext
+    val data = gc.readVoyageData(filename, sc)
+
+    data.groupBy(_._2.annotation).map {
+      case (voyageId, positionsWithItinerary) =>
         val itinerary = positionsWithItinerary.head._1
 
         val st = new SpatialToolkit
         val timeIncrement = 180
         val interpolated: ArrayBuffer[AISPosition] = ArrayBuffer()
 
-        positionsWithItinerary.map(_._2).groupBy(p => (p.longitude,p.latitude)).filter(_._2.size == 1).values.flatten.toList.sortBy(_.seconds).sliding(3,1).foreach{
+        positionsWithItinerary.map(_._2).groupBy(p => (p.longitude, p.latitude)).filter(_._2.size == 1).values.flatten.toList.sortBy(_.seconds).sliding(3, 1).foreach {
           case positions =>
             if (positions.size == 3) {
               val second = positions(1)
@@ -50,7 +53,7 @@ object InterpolationSparkApp {
               // get the longitude step for each interpolating position
               val longitudeIncrement = longitudeDiff / numIncrements
 
-              if (timeDiff > timeIncrement*2 && longitudeDiff != 0.0) {
+              if (timeDiff > timeIncrement * 2 && longitudeDiff != 0.0) {
                 var currentIncrement = 1
                 var currentLongitude = second.longitude + longitudeIncrement
                 var currentSeconds = second.seconds + timeIncrement
@@ -73,7 +76,7 @@ object InterpolationSparkApp {
                   val Y = Math.cos(previousLatitude.toRadians) * Math.sin(interpolatedLatitude.toRadians) - Math.sin(previousLatitude.toRadians) * Math.cos(interpolatedLatitude.toRadians) * Math.cos(dl.toRadians)
                   val bearing = Math.atan2(X, Y).toDegrees.toInt.toDouble
 
-                  if (LocalDatabase.getEnclosingWaypoint(GeoPoint(currentLongitude,interpolatedLatitude)).isEmpty) interpolated.append(AISPosition(second.id, second.imo, interpolatedLatitude, currentLongitude, bearing, bearing, (currentSpeed * 10).toInt / 10.0, currentSeconds, formattedDate, second.shipname, second.shipType, second.destination, second.annotation))
+                  if (LocalDatabase.getEnclosingWaypoint(GeoPoint(currentLongitude, interpolatedLatitude)).isEmpty) interpolated.append(AISPosition(second.id, second.imo, interpolatedLatitude, currentLongitude, bearing, bearing, (currentSpeed * 10).toInt / 10.0, currentSeconds, formattedDate, second.shipname, second.shipType, second.destination, second.annotation))
                   previousLongitude = currentLongitude
                   previousLatitude = interpolatedLatitude
                   currentLongitude += longitudeIncrement
@@ -86,9 +89,8 @@ object InterpolationSparkApp {
 
         val voyagePositions = positionsWithItinerary.map(_._2).to[ArrayBuffer]
         interpolated.foreach(ipos => voyagePositions.append(ipos))
-        Voyage(voyageId,itinerary,voyagePositions.sortBy(_.seconds))
+        Voyage(voyageId, itinerary, voyagePositions.sortBy(_.seconds))
     }.saveAsTextFile(s"$filename-interpolated")
-
   }
 
 }

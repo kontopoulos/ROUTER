@@ -12,7 +12,7 @@ object LocalDatabase {
   var convexHulls: Map[Polygon,String] = Map()
   var convexHullsPerIndex: Map[Int,Set[Polygon]] = Map()
 
-  if (System.getProperty("os.name").toLowerCase.contains("windows")) System.setProperty("hadoop.home.dir","C:\\hadoop" )
+  if (System.getProperty("os.name").toLowerCase.contains("windows")) System.setProperty("hadoop.home.dir","C:\\hadoop")
 
   def initializeDefaults(): Unit = {
     println("Initializing defaults...")

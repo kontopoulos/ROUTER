@@ -12,11 +12,11 @@ object VoyageSparkApp {
 
   def main(args: Array[String]): Unit = {
 
-    val filename = "testing.csv"
-    val shipType = "Cargo"
+    val filename = "dataset.csv"
+    val shipType = "Tanker"
     val numPartitions = 8
 
-    LocalDatabase.initialize("waypoints/training_Cargo_waypoints_2000.0_10.csv")
+    LocalDatabase.initialize(s"waypoints/dataset_${shipType}_waypoints_2000.0_10.csv")
 
     val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
     val sc = new SparkContext(conf)

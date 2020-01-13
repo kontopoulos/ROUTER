@@ -23,10 +23,13 @@ import org.apache.spark.{SparkConf, SparkContext}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 object GlasseasApp {
 
   def main(args: Array[String]): Unit = {
+
+    IJGIS
 
     /*LocalDatabase.initializeDefaults()
     LocalDatabase.readConvexHulls("convexhulls_600.csv")
@@ -41,32 +44,6 @@ object GlasseasApp {
     println(totalPositions)
     println(inCells)
     println(inCells/totalPositions)*/
-
-
-    LocalDatabase.initializeDefaults()
-    LocalDatabase.readConvexHulls("convexhulls_180.csv")
-
-    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
-    val sc = new SparkContext(conf)
-    val gc = new GlasseasContext
-    val data = gc.readVoyageData("testing_Cargo_voyages.csv",sc)//.filter(p => LocalDatabase.getEnclosingWaypoint(GeoPoint(p.longitude,p.latitude)).isEmpty)
-    val totalPositions = data.count().toDouble
-    val inHulls = data.filter{
-      case (itinerary,p) =>
-        LocalDatabase.convexHulls
-         LocalDatabase.getEnclosingConvexHull(GeoPoint(p.longitude,p.latitude)) match {
-           case Some(hull) =>
-             val hullItinerary = hull._2.split("-").last.split("@").head
-             if (hullItinerary == itinerary) true else false
-           case None => false
-         }
-    }.count().toDouble
-    println(totalPositions)
-    println(inHulls)
-    println(inHulls/totalPositions)
-
-
-
 
     /*LocalDatabase.initializeDefaults()
 
@@ -598,6 +575,56 @@ object GlasseasApp {
     }
     cw.close*/
 
+  }
+
+  def IJGIS: Unit = {
+
+    /* ============= CREATE 10 FOLDS ============= */
+
+    /*val shipType = "Passenger"
+    val filename = s"dataset_${shipType}_voyages.csv"
+//    val filename = "dataset_Passenger_voyages.csv"
+//    val filename = "dataset_Tanker_voyages.csv"
+    val numFolds = 10
+
+    val itineraries = scala.io.Source.fromFile(filename).getLines().drop(1).map(_.split(",")(1)).toList.distinct
+    val shuffled = Random.shuffle(itineraries)
+
+    val foldWriter = new FileWriter(s"${shipType}_${numFolds}_folds.csv")
+    foldWriter.write("FOLD,TYPE,ITINERARY\n")
+    for (fold <- 0 until numFolds) {
+      println(s"Current fold: $fold")
+      val trainset = shuffled.slice(0, fold) ++ shuffled.slice(fold+shuffled.length/numFolds, shuffled.length)
+      val testset = shuffled.slice(fold, fold+shuffled.length/numFolds)
+
+      trainset.foreach(itinerary => foldWriter.write(s"$fold,TRAIN,$itinerary\n"))
+      testset.foreach(itinerary => foldWriter.write(s"$fold,TEST,$itinerary\n"))
+    }
+    foldWriter.close()*/
+
+    /* ============= COUNT ACCURACY ============= */
+
+    /*LocalDatabase.initializeDefaults()
+    LocalDatabase.readConvexHulls("convexhulls_180.csv")
+
+    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
+    val sc = new SparkContext(conf)
+    val gc = new GlasseasContext
+    val data = gc.readVoyageData("testing_Cargo_voyages.csv",sc)//.filter(p => LocalDatabase.getEnclosingWaypoint(GeoPoint(p.longitude,p.latitude)).isEmpty)
+    val totalPositions = data.count().toDouble
+    val inHulls = data.filter{
+      case (itinerary,p) =>
+        LocalDatabase.convexHulls
+        LocalDatabase.getEnclosingConvexHull(GeoPoint(p.longitude,p.latitude)) match {
+          case Some(hull) =>
+            val hullItinerary = hull._2.split("-").last.split("@").head
+            if (hullItinerary == itinerary) true else false
+          case None => false
+        }
+    }.count().toDouble
+    println(totalPositions)
+    println(inHulls)
+    println(inHulls/totalPositions)*/
   }
 
   def extractPorts: Unit = {

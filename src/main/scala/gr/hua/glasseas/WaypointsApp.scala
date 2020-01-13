@@ -18,8 +18,8 @@ object WaypointsApp {
 
     println("Grid created.")
 
-    val shipType = "Cargo"
-    val filename = "training.csv"
+    val shipType = "Tanker"
+    val filename = "dataset.csv"
 
     var positionsPerCell: Map[Cell,Set[Int]] = Map()
 
