@@ -10,11 +10,11 @@ object ConvexHullsSparkApp {
 
   def main(args: Array[String]): Unit = {
 
-    val shipType = "Passenger"
+    val shipType = "Cargo"
 
     LocalDatabase.initialize(s"waypoints/dataset_${shipType}_waypoints_2000.0_10.csv")
 
-    val conf = new SparkConf().setAppName("GLASSEAS").setMaster("local[*]")
+    val conf = new SparkConf().setAppName("GLASSEAS")//.setMaster("local[*]")
     val sc = new SparkContext(conf)
 
     val filename = s"dataset_${shipType}_interpolated_voyages.csv"
