@@ -32,7 +32,9 @@ object InterpolationSparkApp {
         val timeIncrement = 180
         val interpolated: ArrayBuffer[AISPosition] = ArrayBuffer()
 
-        positionsWithItinerary.map(_._2).groupBy(p => (p.longitude, p.latitude)).filter(_._2.size == 1).values.flatten.toList.sortBy(_.seconds).sliding(3, 1).foreach {
+        positionsWithItinerary.map(_._2) // discard invalid positions with exactly the same coordinates
+          .groupBy(p => (p.longitude, p.latitude)).filter(_._2.size == 1).values.flatten.toList.filter(p => LocalDatabase.getEnclosingWaypoint(GeoPoint(p.longitude,p.latitude)).isEmpty)
+          .sortBy(_.seconds).sliding(3, 1).foreach {
           case positions =>
             if (positions.size == 3) {
               val second = positions(1)
