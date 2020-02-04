@@ -1,3 +1,4 @@
+/*
 package gr.hua.glasseas.cluster.threads
 
 import java.util.UUID
@@ -69,3 +70,4 @@ object Ship {
   }
 
 }
+*/

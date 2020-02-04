@@ -1,3 +1,4 @@
+/*
 package gr.hua.glasseas
 
 import akka.actor.typed.scaladsl.Behaviors
@@ -64,3 +65,4 @@ object TestAkkaApp {
   }
 
 }
+*/
